@@ -13,6 +13,6 @@ void printBitBoard(BitBoard board){
         std::cout << "\n";
     }
     std::cout << "\n    a b c d e f g h\n";
-    std::cout << std::hex << "value: "<< board << std::endl;
+    std::cout << std::hex << "value: "<< board << std::dec << std::endl;
 }
 

@@ -1,6 +1,8 @@
 #include "BBmacros.h"
 #include "tables.h"
 
+U32 state = 1804289383;
+
 BitBoard pawnAttacks[2][64];
 
 BitBoard knightAttacks[64] = {  0x20400, 0x50800, 0xa1100, 0x142200, 0x284400, 0x508800, 0xa01000, 0x402000,
@@ -152,4 +154,20 @@ BitBoard setOccupancy(int index, BitBoard bitsInMask, BitBoard attackMask){
         }
     }
     return occupancy;
+}
+
+U32 randomNumber32(){
+    // get state
+    U32 currState = state;
+
+    // XOR shift algorithm (www.wikipedia.org/wiki/Xorshift)
+    currState ^= currState << 13;
+    currState ^= currState >> 17;
+    currState ^= currState << 5;
+
+    // update state
+    state = currState;
+
+    // return the random number
+    return currState;
 }

@@ -53,6 +53,39 @@ extern BitBoard pawnAttacks[2][64];
 extern BitBoard knightAttacks[64];
 extern BitBoard kingAttacks[64];
 
+// Magic bitboards stuff
+const U8 bishopRelevantBits[64] = {
+    6, 5, 5, 5, 5, 5, 5, 6,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 5, 5, 5, 5, 5, 5, 6
+};
+
+const U8 rookRelevantBits[64] = {
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    12, 11, 11, 11, 11, 11, 11, 12
+};
+
+// Random state variable, to be used in the random generator
+extern U32 state;
+
+/**
+ * @brief The random32 function returns a random number between 0 and 2^32 - 1 using the XOR shift algorithm.
+ * @return A random number between 0 and 2^32 - 1.
+ * @note This function alters the state of the random generator at each call.
+ */
+U32 randomNumber32();
+
 /**
  * @brief The maskPawnAttacks function populates the pawn attack table for a given color and square.
  * @param color The color of the pawn.

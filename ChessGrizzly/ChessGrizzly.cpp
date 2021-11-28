@@ -16,7 +16,9 @@ int main()
         printBitBoard(generateBishopAttacksOnTheFly(e4, blockage));
         
         //}
-        std::cout << popCount(11)<<std::endl;
+        for (int i = 0; i < 100; i++) {
+            std::cout << randomNumber32() << "\n";
+        }
     return 0;
 }
 
