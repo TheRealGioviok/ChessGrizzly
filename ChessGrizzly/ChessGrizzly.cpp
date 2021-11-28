@@ -4,11 +4,19 @@
 #include <iostream>
 #include "BBmacros.h"
 #include "tables.h"
+#include <intrin.h>
 int main()
 {
     std::cout << "Chess Grizzly by Gioviok\n";
     initPawnAttacks();
-    printBitBoard(pawnAttacks[WHITE][e4]);
+    Square square;
+    //forEachSquare(square) {
+    BitBoard blockage = 0ULL;
+        setBit(blockage, c6);
+        printBitBoard(generateBishopAttacksOnTheFly(e4, blockage));
+        
+        //}
+        std::cout << popCount(11)<<std::endl;
     return 0;
 }
 

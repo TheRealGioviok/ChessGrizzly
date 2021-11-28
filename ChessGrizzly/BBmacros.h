@@ -5,6 +5,7 @@
 #pragma once
 #include <stdio.h>
 #include <iostream>
+#include <intrin.h>
 
 // DATA TYPES
 typedef unsigned long long U64;
@@ -34,10 +35,21 @@ typedef U64 HashKey;
 #define clearBit(board, bit) ((board) &= ~(1ULL << (bit)))
 #define toggleBit(board, bit) ((board) ^= (1ULL << (bit)))
 #define squareBitBoard(square) (1ULL << (square))
+#define popCount(board) __popcnt64(board)
+#define bitScanForward _BitScanForward64 //LS1B
+#define bitScanReverse _BitScanReverse64 //MS1B
+#define rankOf(square) ((square) >> 3)
+#define fileOf(square) ((square) & 7)
+#define makeSquare(rank, file) (((rank) << 3) | (file))
+#define forEachSquare(square) for (Square square = a8; square <= h1; square++)
+#define forEachRank(rank) for (int rank = 0; rank <= 8; rank++)
+#define forEachFile(file) for (int file = 0; file <= 8; file++)
+#define forEachPiece(piece) for (Piece piece = P; piece <= k; piece++)
+#define forEachColor(color) for (Color color = WHITE; color <= BLACK; color++)
 // UTILITY FUNCTIONS
 // The assign macro assigns a value to two variables at once
 #define assign(value, var1, var2) \
-    (var1) = (value);                 \
+    (var1) = (value);             \
     (var2) = (value);
 
 // The color macro returns the color of a piece. It assumes that the piece is not empty.
@@ -107,3 +119,4 @@ const std::string squareNames[64] = {
     "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
 };
+

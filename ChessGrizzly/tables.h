@@ -57,10 +57,59 @@ extern BitBoard kingAttacks[64];
  * @brief The maskPawnAttacks function populates the pawn attack table for a given color and square.
  * @param color The color of the pawn.
  * @param square The square of the pawn.
+ * @return The pawn attack table for the given color and square.
+ * @note This function is used at the beginning of the program. It shouldn't be called at any other time.
  */
 BitBoard maskPawnAttacks(Color color, Square square);
 
 /**
  * @brief The initPawnAttacks function populates the pawn attack table for a given color.
+ * @note This function is called at the beginning of the program. It shouldn't be called at any other time.
  */
 void initPawnAttacks();
+
+/**
+ * @brief The maskBishopAttacks function will mask the relevant occupancy bits for the bishop on a given square.
+ * @param square The square of the bishop.
+ * @return The relevant occupancy bits for the bishop on a given square.
+ * @note This function is used at the beginning of the program. It shouldn't be called at any other time.
+ */
+BitBoard maskBishopAttacks(Square square);
+
+/**
+ * @brief The maskRookAttacks function will mask the relevant occupancy bits for the rook on a given square.
+ * @param square The square of the rook.
+ * @return The relevant occupancy bits for the rook on a given square.
+ * @note This function is used at the beginning of the program. It shouldn't be called at any other time.
+ */
+BitBoard maskRookAttacks(Square square);
+
+/**
+ * @brief The generateBishopAttacksOnTheFly function will generate the bishop attack table for a given square and occupancy.
+ * @param square The square of the bishop.
+ * @param occupancy The occupancy of the board.
+ * @return The bishop attack table for a given square.
+ * @note This function is called at the beginning of the program. It shouldn't be called at any other time.
+ */
+BitBoard generateBishopAttacksOnTheFly(Square square, BitBoard occupancy);
+
+/**
+ * @brief The generateRookAttacksOnTheFly function will generate the rook attack table for a given square and occupancy.
+ * @param square The square of the rook.
+ * @param occupancy The occupancy of the board.
+ * @return The rook attack table for a given square.
+ * @note This function is called at the beginning of the program. It shouldn't be called at any other time.
+ */
+BitBoard generateRookAttacksOnTheFly(Square square, BitBoard occupancy);
+
+/**
+ * @brief The setOccupancy function will return the occupancy board for a given index, bitsIndex and occupancy.
+ * The idea of this function is to be used to generate all the possible occupancy variations.
+ * The maximum number of occupancy boards is actually just 4096 (for the rooks) and 512 (for the bishops).
+ * @param index The index of the occupancy board.
+ * @param bitsInMask The bits in mask of the occupancy board.
+ * @param attackMask The attack mask of the occupancy board.
+ * @return The occupancy board for a given index, bitsInMask and attackMask.
+ * @note This function is called at the beginning of the program. It shouldn't be called at any other time.
+ */
+BitBoard setOccupancy(int index, BitBoard bitsInMask, BitBoard attackMask);
