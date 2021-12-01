@@ -8,18 +8,16 @@
 int main()
 {
     std::cout << "Chess Grizzly by Gioviok\n";
-    initPawnAttacks();
-    Square square;
-    //forEachSquare(square) {
-    BitBoard blockage = 0ULL;
-        setBit(blockage, c6);
-        printBitBoard(generateBishopAttacksOnTheFly(e4, blockage));
-        
-        //}
-        for (int i = 0; i < 100; i++) {
-            std::cout << randomNumber32() << "\n";
-        }
-    return 0;
+    initAll();
+
+    // Create an occupancy to test move generation 
+    BitBoard occupancy = 0ULL;
+
+    printBitBoard(occupancy);
+
+    forEachSquare(square) {
+        printBitBoard(getRookAttack(square, occupancy));
+    }
 }
 
 // Per eseguire il programma: CTRL+F5 oppure Debug > Avvia senza eseguire debug

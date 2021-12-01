@@ -25,6 +25,54 @@ BitBoard kingAttacks[64] = {    0x302, 0x705, 0xe0a, 0x1c14, 0x3828, 0x7050, 0xe
                                 0x203000000000000, 0x507000000000000, 0xa0e000000000000, 0x141c000000000000, 0x2838000000000000, 0x5070000000000000, 0xa0e0000000000000, 0x40c0000000000000
                             };
 
+// The bishop's attack mask
+BitBoard bishopMask[64];
+
+// The rook's attack mask
+BitBoard rookMask[64];
+
+// The bishop's attack table [square][occupancy]
+U64 bishopAttackTable[64][512];
+
+// The rook's attack table [square][occupancy]
+U64 rookAttackTable[64][4096];
+
+U32 randomNumber32()
+{
+    // get state
+    U32 currState = state;
+
+    // XOR shift algorithm (www.wikipedia.org/wiki/Xorshift)
+    currState ^= currState << 13;
+    currState ^= currState >> 17;
+    currState ^= currState << 5;
+
+    // update state
+    state = currState;
+
+    // return the random number
+    return currState;
+}
+
+U64 randomNumber64(){
+    U64 n1, n2, n3, n4;
+    n1 = randomNumber32() & 0xFFFF;
+    n2 = randomNumber32() & 0xFFFF;
+    n3 = randomNumber32() & 0xFFFF;
+    n4 = randomNumber32() & 0xFFFF;
+    return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
+}
+
+U64 generateMagicNumber(){
+
+
+    U64 n1 = randomNumber64();
+    U64 n2 = randomNumber64();
+    U64 n3 = randomNumber64();
+
+    return n1 & n2 & n3;
+}
+
 BitBoard maskPawnAttacks(Color color, Square square)
 {
     BitBoard result = 0;
@@ -156,18 +204,152 @@ BitBoard setOccupancy(int index, BitBoard bitsInMask, BitBoard attackMask){
     return occupancy;
 }
 
-U32 randomNumber32(){
-    // get state
-    U32 currState = state;
+U64 findMagicNumber(Square square, U8 relevantBitCount, bool slider){
 
-    // XOR shift algorithm (www.wikipedia.org/wiki/Xorshift)
-    currState ^= currState << 13;
-    currState ^= currState >> 17;
-    currState ^= currState << 5;
+    // init all the occupancy bitboards
+    BitBoard* occupancy = new BitBoard[4096];
+    BitBoard* attacks = new BitBoard[4096];
+    BitBoard* usedAttacks = new BitBoard[4096];
 
-    // update state
-    state = currState;
+    // Init attack mask
+    BitBoard attackMask = slider ? maskBishopAttacks(square) : maskRookAttacks(square);
 
-    // return the random number
-    return currState;
+    // init occypancy indices
+    int occupancyIndex = 1 << relevantBitCount;
+
+    // loop over occupancy indices
+    for (int index = 0; index < occupancyIndex; index++){
+        // init occupancy bitboard
+        occupancy[index] = setOccupancy(index, relevantBitCount, attackMask);
+        // init attacks
+        attacks[index] = slider ? generateBishopAttacksOnTheFly(square, occupancy[index]) : generateRookAttacksOnTheFly(square, occupancy[index]);
+    }
+    // test magic numbers loop
+    #define BIGNUMBER 100000000
+    for (int count = 0; count < BIGNUMBER; count++){
+        // generate magic number candidate
+        U64 magicNumber = generateMagicNumber();
+
+        // skip inappropriate magic numbers ( those with too few bits set )
+        if (popCount(magicNumber) < 6) continue;
+
+        // init used attacks
+        std::fill(usedAttacks, usedAttacks + 4096, 0ULL);
+
+        // init index
+        int index = 0;
+
+        // fail flag
+
+        bool fail = false;
+
+        // test the magic index loop
+        for(index = 0; !fail && index < occupancyIndex; index++){
+            // init magic index
+            int magicIndex = (magicNumber * occupancy[index]) >> (64 - relevantBitCount);
+            
+            // If magic index works
+            if (usedAttacks[magicIndex] == 0ULL){
+                // set used attacks
+                usedAttacks[magicIndex] = attacks[index];
+            }
+            else if (usedAttacks[magicIndex] != attacks[index]){
+                // magic index doesn't work
+                fail = true;
+            }
+        }
+
+        // If magic number works
+        if (!fail){
+            // return magic number
+            delete[] occupancy;
+            delete[] attacks;
+            delete[] usedAttacks;
+            return magicNumber;
+        }
+    }
+
+    // If no magic number works ( this should never happen ) 
+    std::cout << "No magic number found" << std::endl;
+    delete [] occupancy;
+    delete [] attacks;
+    delete [] usedAttacks;
+    exit(1);
+}
+
+void initMagicNumbers() {
+    // loop over squares
+    std::cout << "Bishop magic numbers: \n";
+    for (Square square = 0; square <= h1; square++)
+    //    std::cout << std::hex << findMagicNumber(square, bishopRelevantBits[square], true) << "\n";
+    std::cout << "\n\nRook magic numbers: \n";
+    for (Square square = 0; square <= h1; square++)
+        std::cout << std::hex << findMagicNumber(square, rookRelevantBits[square], false) << "\n";
+}
+
+void initSliders(){
+    // loop over squares
+    for (Square square = 0; square <= h1; square++){
+        // init bishop and rook mask
+        bishopMask[square] = maskBishopAttacks(square);
+        rookMask[square] = maskRookAttacks(square);
+
+        // init relevant bits
+        int bishopRelevantBitCount = bishopRelevantBits[square];
+        int rookRelevantBitCount = rookRelevantBits[square];
+
+        // init occupancy indicies
+        int bishopOccupancyIndex = 1 << bishopRelevantBitCount;
+        int rookOccupancyIndex = 1 << rookRelevantBitCount;
+
+        // loop over occupancy indices for bishop
+        for (int index = 0; index < bishopOccupancyIndex; index++){
+            // init occupancy bitboard
+            BitBoard occupancy = setOccupancy(index, bishopRelevantBitCount, bishopMask[square]);
+
+            // init magic index
+            int magicIndex = occupancy * bishopMagicNumbers[square] >> (64 - bishopRelevantBitCount);
+
+            // init attack table
+            bishopAttackTable[square][index] = generateBishopAttacksOnTheFly(square, occupancy);
+        }
+
+        // loop over occupancy indices for rook
+        for (int index = 0; index < rookOccupancyIndex; index++){
+            // init occupancy bitboard
+            BitBoard occupancy = setOccupancy(index, rookRelevantBitCount, rookMask[square]);
+
+            // init magic index
+            int magicIndex = occupancy * rookMagicNumbers[square] >> (64 - rookRelevantBitCount);
+
+            // init attack table
+            rookAttackTable[square][index] = generateRookAttacksOnTheFly(square, occupancy);
+        }
+    }
+}
+
+inline BitBoard getBishopAttack(Square square, BitBoard occupancy) {
+    // Get right occupancy
+    occupancy &= bishopMask[square];
+    occupancy *= bishopMagicNumbers[square];
+    occupancy >>= 64 - bishopRelevantBits[square];
+
+    // Return the attack table
+    return bishopAttackTable[square][occupancy];
+}
+
+inline BitBoard getRookAttack(Square square, BitBoard occupancy) {
+    // Get right occupancy
+    occupancy &= rookMask[square];
+    occupancy *= rookMagicNumbers[square];
+    occupancy >>= 64 - rookRelevantBits[square];
+
+    // Return the attack table
+    return rookAttackTable[square][occupancy];
+}
+
+void initAll(){
+    initMagicNumbers();
+    initPawnAttacks();
+    initSliders();
 }
