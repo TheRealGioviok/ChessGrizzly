@@ -11,13 +11,23 @@ int main()
     initAll();
 
     // Create an occupancy to test move generation 
-    BitBoard occupancy = 0ULL;
+    forEachSquare(square) {
+        BitBoard occupancy = 0ULL;
+        setBit(occupancy, square);
+        printBitBoard(occupancy);
+    }
 
-    printBitBoard(occupancy);
+    BitBoard block = 0ULL;
+    block |= squareBitBoard(e4) | squareBitBoard(e5) | squareBitBoard(d4) | squareBitBoard(d5);
 
     forEachSquare(square) {
-        printBitBoard(getRookAttack(square, occupancy));
+        std::cout << squareNames[square] << "\n";
+        //printBitBoard(squareBitBoard(square));
+        printBitBoard(getQueenAttack(square, block));
     }
+
+    printBitBoard(block);
+    
 }
 
 // Per eseguire il programma: CTRL+F5 oppure Debug > Avvia senza eseguire debug

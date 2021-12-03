@@ -1,5 +1,6 @@
 #include "BBmacros.h"
 #include "tables.h"
+#include <cassert>
 
 U32 state = 1804289383;
 
@@ -91,116 +92,167 @@ BitBoard maskPawnAttacks(Color color, Square square)
 }
 
 void initPawnAttacks(){
-    for (Square square = a8; square <= h1; square++){
+    forEachSquare(square){
         pawnAttacks[WHITE][square] = maskPawnAttacks(WHITE, square);
         pawnAttacks[BLACK][square] = maskPawnAttacks(BLACK, square);
     }
 }
 
 BitBoard maskBishopAttacks(Square square){
-    // The result bitboard
-    BitBoard attacks = 0ULL;
+    // result attacks bitboard
+    U64 attacks = 0ULL;
 
-    // init rank and file
-    int targetRank = rankOf(square);
-    int targetFile = fileOf(square);
+    // init ranks & files
+    int r, f;
+
+    // init target rank & files
+    int tr = square / 8;
+    int tf = square % 8;
 
     // mask relevant bishop occupancy bits
-    for (int rank = targetRank + 1, file = targetFile + 1; rank <= 6 && file <= 6; rank++, file++) attacks |= squareBitBoard(makeSquare(file, rank));
-    for (int rank = targetRank + 1, file = targetFile - 1; rank <= 6 && file >= 1; rank++, file--) attacks |= squareBitBoard(makeSquare(file, rank));
-    for (int rank = targetRank - 1, file = targetFile + 1; rank >= 1 && file <= 6; rank--, file++) attacks |= squareBitBoard(makeSquare(file, rank));
-    for (int rank = targetRank - 1, file = targetFile - 1; rank >= 1 && file >= 1; rank--, file--) attacks |= squareBitBoard(makeSquare(file, rank));
+    for (r = tr + 1, f = tf + 1; r <= 6 && f <= 6; r++, f++)
+        attacks |= (1ULL << (r * 8 + f));
+    for (r = tr - 1, f = tf + 1; r >= 1 && f <= 6; r--, f++)
+        attacks |= (1ULL << (r * 8 + f));
+    for (r = tr + 1, f = tf - 1; r <= 6 && f >= 1; r++, f--)
+        attacks |= (1ULL << (r * 8 + f));
+    for (r = tr - 1, f = tf - 1; r >= 1 && f >= 1; r--, f--)
+        attacks |= (1ULL << (r * 8 + f));
+
+    // return attack map
     return attacks;
 }
 
 BitBoard maskRookAttacks(Square square){
-    // The result bitboard
-    BitBoard attacks = 0ULL;
+    // result attacks bitboard
+    U64 attacks = 0ULL;
 
-    // init rank and file
-    int targetRank = rankOf(square);
-    int targetFile = fileOf(square);
+    // init ranks & files
+    int r, f;
+
+    // init target rank & files
+    int tr = square / 8;
+    int tf = square % 8;
 
     // mask relevant rook occupancy bits
-    for (int rank = targetRank + 1; rank <= 6; rank++) attacks |= squareBitBoard(makeSquare(targetFile, rank));
-    for (int rank = targetRank - 1; rank >= 1; rank--) attacks |= squareBitBoard(makeSquare(targetFile, rank));
-    for (int file = targetFile + 1; file <= 6; file++) attacks |= squareBitBoard(makeSquare(file, targetRank));
-    for (int file = targetFile - 1; file >= 1; file--) attacks |= squareBitBoard(makeSquare(file, targetRank));
+    for (r = tr + 1; r <= 6; r++)
+        attacks |= (1ULL << (r * 8 + tf));
+    for (r = tr - 1; r >= 1; r--)
+        attacks |= (1ULL << (r * 8 + tf));
+    for (f = tf + 1; f <= 6; f++)
+        attacks |= (1ULL << (tr * 8 + f));
+    for (f = tf - 1; f >= 1; f--)
+        attacks |= (1ULL << (tr * 8 + f));
+
+    // return attack map
     return attacks;
 }
 
 BitBoard generateBishopAttacksOnTheFly(Square square, BitBoard occupancy){
-    // The result bitboard
-    BitBoard attacks = 0ULL;
+    // result attacks bitboard
+    U64 attacks = 0ULL;
 
-    // init rank and file
-    int targetRank = rankOf(square);
-    int targetFile = fileOf(square);
+    // init ranks & files
+    int r, f;
 
-    // mask relevant bishop occupancy bits
-    for (int rank = targetRank + 1, file = targetFile + 1; rank <= 7 && file <= 7; rank++, file++) {
-        attacks |= squareBitBoard(makeSquare(file, rank));
-        if (occupancy & squareBitBoard(makeSquare(file, rank))) break;
-    }
-    for (int rank = targetRank + 1, file = targetFile - 1; rank <= 7 && file >= 0; rank++, file--) {
-        attacks |= squareBitBoard(makeSquare(file, rank));
-        if (occupancy & squareBitBoard(makeSquare(file, rank))) break;
-    }
-    for (int rank = targetRank - 1, file = targetFile + 1; rank >= 0 && file <= 7; rank--, file++) {
-        attacks |= squareBitBoard(makeSquare(file, rank));
-        if (occupancy & squareBitBoard(makeSquare(file, rank))) break;
-    }
-    for (int rank = targetRank - 1, file = targetFile - 1; rank >= 0 && file >= 0; rank--, file--) {
-        attacks |= squareBitBoard(makeSquare(file, rank));
-        if (occupancy & squareBitBoard(makeSquare(file, rank))) break;
+    // init target rank & files
+    int tr = square / 8;
+    int tf = square % 8;
+
+    // generate bishop atacks
+    for (r = tr + 1, f = tf + 1; r <= 7 && f <= 7; r++, f++) {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & occupancy)
+            break;
     }
 
-    // return the result
+    for (r = tr - 1, f = tf + 1; r >= 0 && f <= 7; r--, f++) {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & occupancy)
+            break;
+    }
+
+    for (r = tr + 1, f = tf - 1; r <= 7 && f >= 0; r++, f--) {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & occupancy)
+            break;
+    }
+
+    for (r = tr - 1, f = tf - 1; r >= 0 && f >= 0; r--, f--) {
+        attacks |= (1ULL << (r * 8 + f));
+        if ((1ULL << (r * 8 + f)) & occupancy)
+            break;
+    }
+
+    // return attack map
     return attacks;
 }
 
 BitBoard generateRookAttacksOnTheFly(Square square, BitBoard occupancy){
-    // The result bitboard
-    BitBoard attacks = 0ULL;
+    // result attacks bitboard
+    U64 attacks = 0ULL;
 
-    // init rank and file
-    int targetRank = rankOf(square);
-    int targetFile = fileOf(square);
+    // init ranks & files
+    int r, f;
 
-    // mask relevant rook occupancy bits
-    for (int rank = targetRank + 1; rank <= 7; rank++) {
-        attacks |= squareBitBoard(makeSquare(targetFile, rank));
-        if (occupancy & squareBitBoard(makeSquare(targetFile, rank))) break;
-    }
-    for (int rank = targetRank - 1; rank >= 0; rank--) {
-        attacks |= squareBitBoard(makeSquare(targetFile, rank));
-        if (occupancy & squareBitBoard(makeSquare(targetFile, rank))) break;
-    }
-    for (int file = targetFile + 1; file <= 7; file++) {
-        attacks |= squareBitBoard(makeSquare(file, targetRank));
-        if (occupancy & squareBitBoard(makeSquare(file, targetRank))) break;
-    }
-    for (int file = targetFile - 1; file >= 0; file--) {
-        attacks |= squareBitBoard(makeSquare(file, targetRank));
-        if (occupancy & squareBitBoard(makeSquare(file, targetRank))) break;
+    // init target rank & files
+    int tr = square / 8;
+    int tf = square % 8;
+
+    // generate rook attacks
+    for (r = tr + 1; r <= 7; r++)
+    {
+        attacks |= (1ULL << (r * 8 + tf));
+        if ((1ULL << (r * 8 + tf)) & occupancy)
+            break;
     }
 
-    // return the result
+    for (r = tr - 1; r >= 0; r--)
+    {
+        attacks |= (1ULL << (r * 8 + tf));
+        if ((1ULL << (r * 8 + tf)) & occupancy)
+            break;
+    }
+
+    for (f = tf + 1; f <= 7; f++)
+    {
+        attacks |= (1ULL << (tr * 8 + f));
+        if ((1ULL << (tr * 8 + f)) & occupancy)
+            break;
+    }
+
+    for (f = tf - 1; f >= 0; f--)
+    {
+        attacks |= (1ULL << (tr * 8 + f));
+        if ((1ULL << (tr * 8 + f)) & occupancy)
+            break;
+    }
+
+    // return attack map
     return attacks;
 }
 
 BitBoard setOccupancy(int index, BitBoard bitsInMask, BitBoard attackMask){
-    BitBoard occupancy = 0ULL;
-    for (int i = 0; i < bitsInMask; i++){
-        // pop the least significant bit
+    // occupancy map
+    U64 occupancy = 0ULL;
+
+    // loop over the range of bits within attack mask
+    for (int count = 0; count < bitsInMask; count++)
+    {
+        // get LS1B index of attacks mask
         unsigned long square;
         bitScanForward(&square, attackMask);
+
+        // pop LS1B in attack map
         clearBit(attackMask, square);
-        // make sure that occupancy is on board
-        if (index & squareBitBoard(i)){
-            occupancy |= squareBitBoard(i);
-        }
+
+        // make sure occupancy is on board
+        if (index & (1 << count))
+            // populate occupancy map
+            occupancy |= (1ULL << square);
     }
+
+    // return occupancy map
     return occupancy;
 }
 
@@ -281,49 +333,114 @@ void initMagicNumbers() {
     // loop over squares
     std::cout << "Bishop magic numbers: \n";
     for (Square square = 0; square <= h1; square++)
-    //    std::cout << std::hex << findMagicNumber(square, bishopRelevantBits[square], true) << "\n";
+        std::cout << std::hex << findMagicNumber(square, bishopRelevantBits[square], true) << "\n";
     std::cout << "\n\nRook magic numbers: \n";
     for (Square square = 0; square <= h1; square++)
         std::cout << std::hex << findMagicNumber(square, rookRelevantBits[square], false) << "\n";
 }
 
-void initSliders(){
-    // loop over squares
-    for (Square square = 0; square <= h1; square++){
-        // init bishop and rook mask
+void initBishopAttacks(){
+    // Iterate through all squares
+    forEachSquare(square){
+        // Init mask
         bishopMask[square] = maskBishopAttacks(square);
-        rookMask[square] = maskRookAttacks(square);
 
-        // init relevant bits
-        int bishopRelevantBitCount = bishopRelevantBits[square];
-        int rookRelevantBitCount = rookRelevantBits[square];
+        // Init current Mask
+        BitBoard attackMask = bishopMask[square];
 
-        // init occupancy indicies
-        int bishopOccupancyIndex = 1 << bishopRelevantBitCount;
-        int rookOccupancyIndex = 1 << rookRelevantBitCount;
+        // relevant bit count
+        int relevantBitCount = bishopRelevantBits[square];
 
-        // loop over occupancy indices for bishop
-        for (int index = 0; index < bishopOccupancyIndex; index++){
+        // Init occupancy index
+        int occupancyIndex = 1 << relevantBitCount;
+
+        // loop over occupancy indices
+        for (int index = 0; index < occupancyIndex; index++){
             // init occupancy bitboard
-            BitBoard occupancy = setOccupancy(index, bishopRelevantBitCount, bishopMask[square]);
-
+            BitBoard occupancy = setOccupancy(index, relevantBitCount, attackMask);
             // init magic index
-            int magicIndex = occupancy * bishopMagicNumbers[square] >> (64 - bishopRelevantBitCount);
-
-            // init attack table
+            int magicIndex = (bishopMagicNumbers[square] * occupancy) >> (64 - relevantBitCount);
+            // init attacks
             bishopAttackTable[square][index] = generateBishopAttacksOnTheFly(square, occupancy);
         }
+    }
+}
 
-        // loop over occupancy indices for rook
-        for (int index = 0; index < rookOccupancyIndex; index++){
+void initRookAttacks(){
+    // Iterate through all squares
+    forEachSquare(square){
+        // Init mask
+        rookMask[square] = maskRookAttacks(square);
+
+        // Init current Mask
+        BitBoard attackMask = rookMask[square];
+
+        // relevant bit count
+        int relevantBitCount = rookRelevantBits[square];
+
+        // Init occupancy index
+        int occupancyIndex = 1 << relevantBitCount;
+
+        // loop over occupancy indices
+        for (int index = 0; index < occupancyIndex; index++){
             // init occupancy bitboard
-            BitBoard occupancy = setOccupancy(index, rookRelevantBitCount, rookMask[square]);
-
+            BitBoard occupancy = setOccupancy(index, relevantBitCount, attackMask);
             // init magic index
-            int magicIndex = occupancy * rookMagicNumbers[square] >> (64 - rookRelevantBitCount);
-
-            // init attack table
+            int magicIndex = (rookMagicNumbers[square] * occupancy) >> (64 - relevantBitCount);
+            // init attacks
             rookAttackTable[square][index] = generateRookAttacksOnTheFly(square, occupancy);
+        }
+    }
+}
+
+void initSliders(bool bishop){
+    // loop over squares
+    for (Square square = 0; square <= h1; square++){
+
+        // loop over 64 board squares
+        for (int square = 0; square < 64; square++) {
+            // init bishop & rook masks
+            bishopMask[square] = maskBishopAttacks(square);
+            rookMask[square] = maskRookAttacks(square);
+
+            // init current mask
+            U64 attackMask = bishop ? bishopMask[square] : rookMask[square];
+
+            // init relevant occupancy bit count
+            int relevant_bits_count = popCount(attackMask);
+
+            // init occupancy indicies
+            int occupancy_indicies = (1 << relevant_bits_count);
+
+            // loop over occupancy indicies
+            for (int index = 0; index < occupancy_indicies; index++)
+            {
+                // bishop
+                if (bishop)
+                {
+                    // init current occupancy variation
+                    U64 occupancy = setOccupancy(index, relevant_bits_count, attackMask);
+
+                    // init magic index
+                    int magicIndex = (occupancy * bishopMagicNumbers[square]) >> (64 - bishopRelevantBits[square]);
+
+                    // init bishop attacks
+                    bishopAttackTable[square][magicIndex] = generateBishopAttacksOnTheFly(square, occupancy);
+                }
+
+                // rook
+                else
+                {
+                    // init current occupancy variation
+                    U64 occupancy = setOccupancy(index, relevant_bits_count, attackMask);
+
+                    // init magic index
+                    int magicIndex = (occupancy * rookMagicNumbers[square]) >> (64 - rookRelevantBits[square]);
+
+                    // init bishop attacks
+                    rookAttackTable[square][magicIndex] = generateRookAttacksOnTheFly(square, occupancy);
+                }
+            }
         }
     }
 }
@@ -348,8 +465,15 @@ inline BitBoard getRookAttack(Square square, BitBoard occupancy) {
     return rookAttackTable[square][occupancy];
 }
 
+inline BitBoard getQueenAttack(Square square, BitBoard occupancy) {
+    // Return rook attacks unioned with bishop attacks
+    return getBishopAttack(square, occupancy) | getRookAttack(square, occupancy);
+}
+
 void initAll(){
-    initMagicNumbers();
     initPawnAttacks();
-    initSliders();
+    initSliders(true);
+    initSliders(false);
+    // initBishopAttacks();
+    // initRookAttacks();
 }

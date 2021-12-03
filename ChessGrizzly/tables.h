@@ -323,7 +323,8 @@ U64 findMagicNumber(Square square, U8 relevantBitCount, bool slider);
 void initMagicNumbers();
 
 /**
- * @brief The initSliders function is used to populate the attack masks and attack tables for the rooks and bishops.
+ * @brief The initSliders function is used to populate the attack masks and attack tables for the rooks or bishops.
+ * @param bishop True if bishop, false if rook.
  * @note This function shouldn't be called at any other time other than at the beginning of the program.
  */
 void initSliders();
@@ -347,7 +348,28 @@ extern inline BitBoard getBishopAttack(Square square, BitBoard occupancy);
 extern inline BitBoard getRookAttack(Square square, BitBoard occupancy);
 
 /**
+ * @brief The getQueenAttack function will return the queen attack table for a given square and occupancy. The function is a wrapper for the rook and bishop attack tables, since the queen is a combination of the rook and bishop.
+ * @param square The square of the queen.
+ * @param occupancy The occupancy of the board.
+ * @return The queen attack table for a given square and occupancy.
+ * @note This is the function to be called by move generation.
+ */
+extern inline BitBoard getQueenAttack(Square square, BitBoard occupancy);
+
+/**
  * @brief The initAll function is used to initialize all the attack masks and attack tables, as well as some helper tables for evaluating positions.
  * @note This function should be called only at the beginning of the program (in the main function).
  */
 void initAll();
+
+/**
+ * @brief The initBishopAttacks function is used to populate the bishop attack table.
+ * @note This function should be called only at the beginning of the program (in the main function).
+ */
+void initBishopAttacks();
+
+/**
+ * @brief The initRookAttacks function is used to populate the rook attack table.
+ * @note This function should be called only at the beginning of the program (in the main function).
+ */
+void initRookAttacks();

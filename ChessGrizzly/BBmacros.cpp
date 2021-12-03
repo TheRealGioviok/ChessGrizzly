@@ -6,7 +6,7 @@ void printBitBoard(BitBoard board){
         // loop over files
         std::cout << " " << 7 - rank + 1 << "  ";
         for (int file = 0; file < 8; file++){
-            Square s = (rank << 3) + file;
+            Square s = rank * 8 + file;
             // print the bitboard
             std::cout << testBit(board, s) << " ";
         }
