@@ -126,6 +126,7 @@ enum Squares{
 };
 
 const char charPieces[13] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', '.'};
+const char promotionPieces[13] = {'p', 'n', 'b', 'r', 'q', 'k', 'p', 'n', 'b', 'r', 'q', 'k', ' '};
 const pieceChar pieceChars[13] = {'♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', '.'};
 
 enum cstlRights{
