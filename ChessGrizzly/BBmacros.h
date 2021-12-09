@@ -24,8 +24,6 @@ typedef U64 BitMask;
 typedef U8 Square;
 typedef U8 Piece;
 typedef S16 Score;
-typedef U32 Move;
-typedef U64 ScoredMove;
 typedef U64 HashKey;
 typedef U8 Side;
 typedef U8 Depth;

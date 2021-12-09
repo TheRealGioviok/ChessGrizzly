@@ -2,7 +2,7 @@
 
 #include "BBmacros.h"
 #include "tables.h"
-
+#include "Move.h"
 // The Position.h file contains the Position class, which stores information about the position of the chessboard.
 // It can also generate moves and check if a move is legal.
 
@@ -144,4 +144,11 @@ public:
      * @return The number of pieces of the given side attacking the square.
      */
     U8 countSquaresAttacks(Square square, Side side);
+
+    /**
+     * @brief The generateMoves function generates all the pseudo-legal moves for the current position.
+     * @param moves The move list to add the moves to.
+     * @note Moves are pseudo-legal, meaning that they are legal if the king is not in check. This will be checked by the search routine.
+     */
+    void generateMoves(MoveList *moves);
 };

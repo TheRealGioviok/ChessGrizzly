@@ -27,6 +27,9 @@
     <ClCompile Include="Position.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
+    <ClCompile Include="Move.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BBmacros.h">
@@ -36,6 +39,9 @@
       <Filter>File di intestazione</Filter>
     </ClInclude>
     <ClInclude Include="Position.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="Move.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

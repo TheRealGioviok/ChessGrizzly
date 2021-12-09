@@ -1,4 +1,7 @@
 #pragma once
+#include "BBmacros.h"
+#include "Position.h"
+#include "tables.h"
 
 // The structure of a move is as follows:
 // From: The square the piece is moving from
@@ -24,7 +27,7 @@
 */
 
 // The move is therefore stored as a 32 bit integer
-typedef unsigned int Move;
+typedef U32 Move;
 
 #define sourceSquare(move) ((move) & 0x3F)
 #define targetSquare(move) (((move) >> 6) & 0x3F)
@@ -52,3 +55,33 @@ typedef unsigned int Move;
  * @param move The move to print
  */
 void printMove(Move move);
+
+// The move will be scored in order to be ordered for the A/B search.
+// We will store the score in an unsigned int. So the ScoredMove can be represented by a 64 bit unsigned int.
+// The score is stored in the upper 32 bits and the move in the lower 32 bits.
+typedef U64 ScoredMove;
+
+#define scoreOfMove(move) ((move) >> 32)
+#define onlyMove(move) ((move) & 0xFFFFFFFF)
+
+// All the moves are stored in the MoveList structure.
+struct MoveList {
+    // The number of moves in the list
+    U8 count = 1; // The count starts from 1 so that we reserve the first element for the ttMove
+    // It has been found that the maximum number of moves is 109, so 128 is a good size (since there may be illegal moves)
+    ScoredMove moves[128]; 
+};
+
+/**
+ * @brief The addMoveToList function adds a move to a move list
+ * @param move The move to add
+ * @param list The list to add the move to
+ */
+void addMoveToList(ScoredMove move, MoveList *moveList);
+
+/**
+ * @brief The printMoveList function prints a move list in a human readable format (UCI)
+ * @param moveList The move list to print
+ * @param printScore Whether or not to print the score of the move 
+ */
+void printMoveList(MoveList *moveList, bool printScore = false);

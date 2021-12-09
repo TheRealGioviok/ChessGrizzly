@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "BBmacros.h"
+#include "Move.h"
 #include "tables.h"
 #include "Position.h"
 #include <intrin.h>
@@ -12,12 +13,12 @@ int main()
     initAll();
 
     Position pos;
+    
     pos.printBoard();
 
-    forEachSquare(square){
-        std::cout << (int)pos.countSquaresAttacks(square, WHITE) << " ";
-        if (square % 8 == 7)
-            std::cout << "\n";
-    }
-    
+    MoveList moveList;
+
+    pos.generateMoves(&moveList);
+
+    //printMoveList(&moveList);
 }
