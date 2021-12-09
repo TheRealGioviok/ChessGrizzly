@@ -141,10 +141,12 @@
   <ItemGroup>
     <ClCompile Include="BBmacros.cpp" />
     <ClCompile Include="ChessGrizzly.cpp" />
+    <ClCompile Include="Position.cpp" />
     <ClCompile Include="tables.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BBmacros.h" />
+    <ClInclude Include="Position.h" />
     <ClInclude Include="tables.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
