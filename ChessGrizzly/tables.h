@@ -1,3 +1,5 @@
+#pragma once
+
 // The tables.h file contains all the table used in the engine.
 // It also contains the reference to some dynamically allocated table (the hash table).
 #include "BBmacros.h"
