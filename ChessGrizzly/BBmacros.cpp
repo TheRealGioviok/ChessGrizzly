@@ -16,3 +16,45 @@ void printBitBoard(BitBoard board){
     std::cout << std::hex << "value: "<< board << std::dec << std::endl;
 }
 
+Piece pieceFromChar(char pieceChar){
+    switch (pieceChar){
+        case 'P':
+            return P;
+        case 'N':
+            return N;
+        case 'B':
+            return B;
+        case 'R':
+            return R;
+        case 'Q':
+            return Q;
+        case 'K':
+            return K;
+        case 'p':
+            return p;
+        case 'n':
+            return n;
+        case 'b':
+            return b;
+        case 'r':
+            return r;
+        case 'q':
+            return q;
+        case 'k':
+            return k;
+        default:
+            return EMPTY;
+    }
+}
+
+Square squareFromName(const char *squareName){
+    // We expect square names to be in the form of "a1"
+    // so we can just use the ASCII values to get the file and rank
+    // and then multiply by 8 to get the square number
+    int rank = squareName[1] - '1';
+    int file = squareName[0] - 'a';
+    if (rank < 0 || rank > 7 || file < 0 || file > 7){
+        return noSquare;
+    }
+    return rank * 8 + file;
+}
