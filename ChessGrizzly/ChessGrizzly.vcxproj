@@ -149,6 +149,7 @@
     <ClCompile Include="Move.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="tables.cpp" />
+    <ClCompile Include="uci.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BBmacros.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="Move.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="tables.h" />
+    <ClInclude Include="uci.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
