@@ -1,6 +1,6 @@
 #pragma once
 #include "BBmacros.h"
-#include "Position.h"
+
 #include "tables.h"
 
 // The structure of a move is as follows:
@@ -33,7 +33,7 @@ typedef U32 Move;
 #define targetSquare(move) (((move) >> 6) & 0x3F)
 #define pieceMoved(move) (((move) >> 12) & 0xF)
 #define pieceCaptured(move) (((move) >> 16) & 0xF)
-#define promotion(move) (((move) >> 20) & 0xF)
+#define promotionOf(move) (((move) >> 20) & 0xF)
 #define isEnPassantMove(move) (((move) >> 24) & 0x1)
 #define isCastlingMove(move) (((move) >> 25) & 0x1)
 #define isDoublePawnPush(move) (((move) >> 26) & 0x1)
@@ -69,8 +69,10 @@ struct MoveList {
     // The number of moves in the list
     U8 count = 1; // The count starts from 1 so that we reserve the first element for the ttMove
     // It has been found that the maximum number of moves is 109, so 128 is a good size (since there may be illegal moves)
-    ScoredMove moves[128]; 
+    ScoredMove moves[128] = { 0ULL };
 };
+
+// If needed, #include "Position.h"
 
 /**
  * @brief The addMoveToList function adds a move to a move list
@@ -85,3 +87,14 @@ void addMoveToList(ScoredMove move, MoveList *moveList);
  * @param printScore Whether or not to print the score of the move 
  */
 void printMoveList(MoveList *moveList, bool printScore = false);
+
+const U8 castlingRightsMask[64] = {
+    7, 15, 15, 15, 3, 15, 15, 11,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    13, 15, 15, 15, 12, 15, 15, 14
+};

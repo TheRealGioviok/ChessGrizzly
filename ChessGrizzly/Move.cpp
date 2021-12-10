@@ -4,8 +4,8 @@
 
 void printMove(Move move){
     std::cout << squareNames[sourceSquare(move)] << squareNames[targetSquare(move)];
-    if(promotion(move) != EMPTY){
-        std::cout << promotionPieces[promotion(move)];
+    if(promotionOf(move) != EMPTY){
+        std::cout << promotionPieces[promotionOf(move)];
     }
 }
 
@@ -15,6 +15,9 @@ void addMoveToList(ScoredMove move, MoveList *list){
 
 void printMoveList(MoveList *moveList, bool printScore){
     for(int i = 0; i < moveList->count; i++){
+        if(moveList->moves[i] == 0){
+            continue;
+        }
         if(printScore){
             std::cout << scoreOfMove(moveList->moves[i]) << " ";
         }
