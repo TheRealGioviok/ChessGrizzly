@@ -109,19 +109,23 @@ U64 Game::perft(int depth){
     return nodes;
 }
 
-U64 Game::_perft(int depth){
-    if (depth == 0) {
+U64 Game::_perft(int depth)
+{
+    if (depth == 0)
+    {
         //print();
         //getchar();
         nodes++;
         return 1ULL;
     }
     U64 total = 0ULL;
-    MoveList* moveList = new MoveList();
+    MoveList *moveList = new MoveList();
     generateMoves(moveList);
     Position save = pos;
-    for (int i = 1; i < moveList->count; i++){
-        if (makeMove(moveList->moves[i])){
+    for (int i = 1; i < moveList->count; i++)
+    {
+        if (makeMove(moveList->moves[i]))
+        {
             total += _perft(depth - 1);
         }
         pos = save;
@@ -166,4 +170,45 @@ bool Game::parseFEN(const char *fen){
 Game::Game(){
     pos = Position();
     nodes = 0ULL;
+}
+
+Game::Game(const char *fen){
+    pos = Position();
+    nodes = 0ULL;
+    parseFEN(fen);
+}
+
+Move Game::getLegalOf(char * move){
+    return pos.getLegalOf(move);
+}
+
+bool Game::executeMoveList(char *ml){
+    while (*ml){
+        while (*ml == ' ') ml++;
+        Move move = getLegalOf(ml);
+        if (!move){
+            return false;
+        }
+        if (!makeMove(move)){
+            return false;
+        }
+        // since the move size can be either 4 or 5, we don't know if we have to skip the next character
+        if (ml[4] == ' '){
+            ml += 4;
+        }
+        else{
+            ml += 5;
+        }
+    }
+}
+
+void Game::reset(){
+    pos = Position();
+    nodes = 0ULL;
+    ply = 0;
+    // Add stuff here when implementing heuristics
+}
+
+void Game::startSearch(){
+    std::cout << "Search not implemented yet" << std::endl;
 }

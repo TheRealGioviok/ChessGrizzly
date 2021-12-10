@@ -16,6 +16,20 @@ public:
     U64 nodes = 0;
     Position pos;
     U16 ply = 0;
+    Depth depth = 0;
+    U32 moveTime = 0;
+    U32 wtime = 0;
+    U32 btime = 0;
+    U32 winc = 0;
+    U32 binc = 0;
+    bool stopped = false;
+
+    /**
+     * @brief The startSearch function is the main function for the search. It calls the search function with the internal parameters.
+     * @note The parameters are set via the UCI protocol.
+     */
+    void startSearch();
+
 
     /**
      * @brief The print function prints the internal position to stdout.
@@ -59,4 +73,28 @@ public:
 
     // The game constructor.
     Game();
+
+    // The FEN constructor.
+    Game(const char *fen);
+
+    /**
+     * @brief The getLegalOf function is a wrapper for the internal getLegalOf of the internal position.
+     * @param move the move string
+     * @return The complete move encoding if the string corresponds to a legal move in the current position, 0 (null move) otherwise.
+     */
+    Move getLegalOf(char* move);
+
+    /**
+     * @brief The executeMoveList function executes a list of moves on the internal position. It is used for the UCI interface.
+     * @param ml The null terminated string containing the list of moves to execute.
+     * @return true if the move list was executed successfully, false otherwise. (State of the position is undefined in this case.)
+     * @note This function is used for the UCI interface.
+     */
+    bool executeMoveList(char* ml);
+
+    /**
+     * @brief The reset function resets the internal position to the starting position, as well as resetting all the internal variables.
+     * @note This function is used for the UCI interface.
+     */
+    void reset();
 };
