@@ -815,3 +815,50 @@ void Position::generateMoves(MoveList *moveList){
     }
 }
 
+Move Position::getLegalOf(char * move){
+    MoveList moveList;
+    generateMoves(&moveList);
+    // parse source, target and promotion of the move string
+    Square source = move[0] - 'a' + (8 - (move[1] - '0')) * 8;
+    Square target = move[2] - 'a' + (8 - (move[3] - '0')) * 8;
+    Piece promotion = EMPTY;
+
+    switch (move[4]){
+        case 'q':
+            promotion = q;
+            break;
+        case 'r':
+            promotion = r;
+            break;
+        case 'b':
+            promotion = b;
+            break;
+        case 'n':
+            promotion = n;
+            break;
+        case 'Q':
+            promotion = Q;
+            break;
+        case 'R':
+            promotion = R;
+            break;
+        case 'B':
+            promotion = B;
+            break;
+        case 'N':
+            promotion = N;
+            break;
+        default:
+            break;
+    }
+    for (int i = 0; i < moveList.count; i++){
+        Move m = moveList.moves[i];
+        if ((sourceSquare(m) == source) &&
+            (targetSquare(m) == target) &&
+            (promotionOf(m) == promotion)){
+            return m;
+        }
+    }
+    return 0;
+}
+

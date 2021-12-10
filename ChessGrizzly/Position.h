@@ -149,4 +149,11 @@ public:
      * @note Moves are pseudo-legal, meaning that they are legal if the king is not in check. This will be checked by the search routine.
      */
     void generateMoves(MoveList *moves);
+
+    /**
+     * @brief The getLegalOf function gets a move string and compares to the list of legal moves.
+     * @param move The move to check.
+     * @return The legal move, or NULL if the move is not legal.
+     */
+    Move getLegalOf(char * move);
 };
