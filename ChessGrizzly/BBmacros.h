@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <iostream>
 #include <intrin.h>
+#include <windows.h>
+
 
 // DATA TYPES
 typedef unsigned long long U64;
@@ -79,6 +81,14 @@ Piece pieceFromChar(char pieceChar);
  * @return The square corresponding to the name (noSquare if the name is not a square).
  */
 Square squareFromName(const char* squareName);
+
+/**
+ * @brief The getTime64 function returns the current time in milliseconds.
+ * @return The current time in milliseconds.
+ */
+inline U64 getTime64(){
+    return GetTickCount64();
+}
 
 // Enums
 enum Color {

@@ -51,7 +51,7 @@ Square squareFromName(const char *squareName){
     // We expect square names to be in the form of "a1"
     // so we can just use the ASCII values to get the file and rank
     // and then multiply by 8 to get the square number
-    int rank = squareName[1] - '1';
+    int rank = 7 - (squareName[1] - '1');
     int file = squareName[0] - 'a';
     if (rank < 0 || rank > 7 || file < 0 || file > 7){
         return noSquare;
