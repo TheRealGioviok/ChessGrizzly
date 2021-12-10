@@ -207,6 +207,9 @@ bool Position::parseFEN(const char *fen) {
             fen++;
         }
     }
+    else {
+        fen++;
+    }
 
     // 4. En passant target square
     fen++;
@@ -255,28 +258,28 @@ bool Position::isSquareAttacked(Square square, Side side){
     if (side == WHITE) {
         return 
             // White pawns
-            pawnAttacks[BLACK][square] & bitboards[P] +
+            (bool)(pawnAttacks[BLACK][square] & bitboards[P]) +
             // White knights
-            knightAttacks[square] & bitboards[N] +
+            (bool)(knightAttacks[square] & bitboards[N]) +
             // White bishops and queens
-            getBishopAttack(square, occupancy) & (bitboards[B] | bitboards[Q]) +
+            (bool)(getBishopAttack(square, occupancy) & (bitboards[B] | bitboards[Q])) +
             // White rooks and queens
-            getRookAttack(square, occupancy) & (bitboards[R] | bitboards[Q]) +
+            (bool)(getRookAttack(square, occupancy) & (bitboards[R] | bitboards[Q])) +
             // White king
-            kingAttacks[square] & bitboards[K];
+            (bool)(kingAttacks[square] & bitboards[K]);
     }
     if (side == BLACK) {
         return 
             // Black pawns
-            pawnAttacks[WHITE][square] & bitboards[p] +
+            (bool)(pawnAttacks[WHITE][square] & bitboards[p]) +
             // Black knights
-            knightAttacks[square] & bitboards[n] +
+            (bool)(knightAttacks[square] & bitboards[n]) +
             // Black bishops and queens
-            getBishopAttack(square, occupancy) & (bitboards[b] | bitboards[q]) +
+            (bool)(getBishopAttack(square, occupancy) & (bitboards[b] | bitboards[q])) +
             // Black rooks and queens
-            getRookAttack(square, occupancy) & (bitboards[r] | bitboards[q]) +
+            (bool)(getRookAttack(square, occupancy) & (bitboards[r] | bitboards[q])) +
             // Black king
-            kingAttacks[square] & bitboards[k];
+            (bool)(kingAttacks[square] & bitboards[k]);
     }
     // If side is BOTH, we are in a error state
     std::cout << "Error: Fatal Error. In CountSquaresAttacks, side wasn't WHITE or BLACK. Exiting...\n";
@@ -411,6 +414,13 @@ void Position::generateMoves(MoveList *moveList){
                         addMoveToList(encodeMove(pawn, capture, P, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & pawnCheckers) > 0)), moveList);
                     }
                 }
+                // Now we generate en passant captures
+                if (enPassantSquare != noSquare){
+                    // we check if the enPassantSquare mask & attack is not empty
+                    if (squareBitBoard(enPassantSquare) & pawnAttacks[us][pawn]){
+                        addMoveToList(encodeMove(pawn, enPassantSquare, P, p, EMPTY, true, false, false, ((squareBitBoard(enPassantSquare) & pawnCheckers) > 0)), moveList);
+                    }
+                }
             }
         }
 
@@ -422,9 +432,8 @@ void Position::generateMoves(MoveList *moveList){
                 unsigned long knight;
                 bitScanForward(&knight, knights);
                 clearBit(knights, knight);
-                BitBoard knightQuiets = knightAttacks[knight] & occupancies[BOTH];
-                BitBoard knightAttacks = knightQuiets & occupancies[them];
-                knightQuiets ^= knightAttacks | occupancies[us];
+                BitBoard knightCaptures = knightAttacks[knight] & occupancies[them];
+                BitBoard knightQuiets = knightAttacks[knight] & ~occupancies[BOTH];
                 // Quiet moves
                 while (knightQuiets){
                     unsigned long quiet;
@@ -433,10 +442,10 @@ void Position::generateMoves(MoveList *moveList){
                     addMoveToList(encodeMove(knight, quiet, N, EMPTY, EMPTY, false, false, false, ((squareBitBoard(quiet) & knightCheckers) > 0)), moveList);
                 }
                 // Captures
-                while (knightAttacks){
+                while (knightCaptures){
                     unsigned long attack;
-                    bitScanForward(&attack, knightAttacks);
-                    clearBit(knightAttacks, attack);
+                    bitScanForward(&attack, knightCaptures);
+                    clearBit(knightCaptures, attack);
                     Piece captured = pieceOn(attack);
                     addMoveToList(encodeMove(knight, attack, N, captured, EMPTY, false, false, false, ((squareBitBoard(attack) & knightCheckers) > 0)), moveList);
                 }
@@ -453,7 +462,7 @@ void Position::generateMoves(MoveList *moveList){
                 clearBit(bishops, bishop);
                 BitBoard bishopQuiets = getBishopAttack(bishop, occupancies[BOTH]);
                 BitBoard bishopAttacks = bishopQuiets & occupancies[them];
-                bishopQuiets ^= bishopAttacks | occupancies[us];
+                bishopQuiets &= ~occupancies[BOTH];
                 // Quiet moves
                 while (bishopQuiets){
                     unsigned long quiet;
@@ -482,7 +491,7 @@ void Position::generateMoves(MoveList *moveList){
                 clearBit(rooks, rook);
                 BitBoard rookQuiets = getRookAttack(rook, occupancies[BOTH]);
                 BitBoard rookAttacks = rookQuiets & occupancies[them];
-                rookQuiets ^= rookAttacks | occupancies[us];
+                rookQuiets &= ~occupancies[BOTH];
                 // Quiet moves
                 while (rookQuiets){
                     unsigned long quiet;
@@ -511,7 +520,7 @@ void Position::generateMoves(MoveList *moveList){
                 clearBit(queens, queen);
                 BitBoard queenQuiets = getQueenAttack(queen, occupancies[BOTH]);
                 BitBoard queenAttacks = queenQuiets & occupancies[them];
-                queenQuiets ^= queenAttacks | occupancies[us];
+                queenQuiets &= ~occupancies[BOTH];
                 // Quiet moves
                 while (queenQuiets){
                     unsigned long quiet;
@@ -534,9 +543,8 @@ void Position::generateMoves(MoveList *moveList){
         // Normal king moves are very easy to generate, due to its leaper nature, but we also need to generate castling moves
         // We also already have the king position stored in the ourKing variable
         {
-            BitBoard kingQuiets = kingAttacks[ourKing];
-            BitBoard kingCaptures = kingQuiets & occupancies[them];
-            kingQuiets ^= kingCaptures | occupancies[us];
+            BitBoard kingQuiets = kingAttacks[ourKing] & ~occupancies[BOTH];
+            BitBoard kingCaptures = kingAttacks[ourKing] & occupancies[them];
             // Quiet moves
             while (kingQuiets){
                 unsigned long quiet;
@@ -570,7 +578,7 @@ void Position::generateMoves(MoveList *moveList){
                 if (castlingRights & WQCastle){
                     // We need to check if the passing squares are attacked or occupied, in which case we can't castle
                     if (!((squareBitBoard(d1) | squareBitBoard(c1) | squareBitBoard(b1)) & occupancies[BOTH])){
-                        if (!isSquareAttacked(d1,them) && !isSquareAttacked(c1,them) && !isSquareAttacked(b1,them)){
+                        if (!isSquareAttacked(d1,them) && !isSquareAttacked(c1,them)){
                             // A castling move can be check if the rook that lands on d1 is on the rookCheckers bitboard
                             addMoveToList(encodeMove(ourKing, c1, K, EMPTY, EMPTY, false, true, true, ((squareBitBoard(d1) & rookCheckers) > 0)), moveList);
                         }
@@ -579,4 +587,231 @@ void Position::generateMoves(MoveList *moveList){
             }
         }
     }
+    else{
+        // Pawn moves
+        // Pawn moves are quite tricky to generate. First we try to generate the forward move. Then, if we succeed, we try to generate the double pawn push. We then generate the captures.
+        // We also must account for promotions.
+        {
+            BitBoard pawns = bitboards[p];
+            // Iterate over all pawns
+            while (pawns){
+                // get pawn
+                unsigned long pawn;
+                bitScanForward(&pawn, pawns);
+                // remove pawn from bitboard
+                clearBit(pawns, pawn);
+                // Single pawn push
+                Square to = (Square)(pawn + 8);
+                bool isPromotion = to >= a1;
+                // If the square ahead is clear, we can move there
+                if(!testBit(occupancies[BOTH], to)){
+                    if(isPromotion){
+                        // We generate all possible promotions
+                        addMoveToList(encodeMove(pawn, to, p, EMPTY, q, false, false, false, ((squareBitBoard(to) & queenCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, to, p, EMPTY, r, false, false, false, ((squareBitBoard(to) & rookCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, to, p, EMPTY, b, false, false, false, ((squareBitBoard(to) & bishopCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, to, p, EMPTY, n, false, false, false, ((squareBitBoard(to) & knightCheckers) > 0)), moveList);
+                    }
+                    else{
+                        addMoveToList(encodeMove(pawn, to, p, EMPTY, EMPTY, false, false, false, ((squareBitBoard(to) & pawnCheckers) > 0)), moveList);
+                        // If we are on the seventh rank, we can generate a double pawn push
+                        U8 rank = rankOf(pawn);
+                        if (rank == 1){
+                            to = (Square)(pawn + 16);
+                            if(!testBit(occupancies[BOTH], to)){
+                                addMoveToList(encodeMove(pawn, to, p, EMPTY, EMPTY, false, false, true, ((squareBitBoard(to) & pawnCheckers) > 0)), moveList);
+                            }
+                        }
+                    }
+                }
+
+                // Now we can generate captures
+                BitBoard captures = pawnAttacks[us][pawn] & occupancies[them];
+                while (captures){
+                    unsigned long capture;
+                    bitScanForward(&capture, captures);
+                    clearBit(captures, capture);
+                    Piece captured = pieceOn(capture);
+                    if (isPromotion){
+                        // We generate all possible promotions
+                        addMoveToList(encodeMove(pawn, capture, p, captured, q, false, false, false, ((squareBitBoard(capture) & queenCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, capture, p, captured, r, false, false, false, ((squareBitBoard(capture) & rookCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, capture, p, captured, b, false, false, false, ((squareBitBoard(capture) & bishopCheckers) > 0)), moveList);
+                        addMoveToList(encodeMove(pawn, capture, p, captured, n, false, false, false, ((squareBitBoard(capture) & knightCheckers) > 0)), moveList);
+                    }
+                    else{
+                        addMoveToList(encodeMove(pawn, capture, p, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & pawnCheckers) > 0)), moveList);
+                    }
+                }
+                // Now we can generate en passant captures
+                if (enPassantSquare != noSquare){
+                    // we check if the enPassantSquare mask & attack is not empty
+                    if (squareBitBoard(enPassantSquare) & pawnAttacks[us][pawn]){
+                        addMoveToList(encodeMove(pawn, enPassantSquare, p, P, EMPTY, true, false, false, ((squareBitBoard(enPassantSquare) & pawnCheckers) > 0)), moveList);
+                    }
+                }
+            }
+        }
+        // Knight moves
+        // Knight moves are trivially easy to generate, due to its leaper nature
+        {
+            BitBoard knights = bitboards[n];
+            while (knights){
+                unsigned long knight;
+                bitScanForward(&knight, knights);
+                clearBit(knights, knight);
+                BitBoard knightCaptures = knightAttacks[knight] & occupancies[them];
+                BitBoard knightQuiets = knightAttacks[knight] & ~occupancies[BOTH];
+                // Quiet moves
+                while (knightQuiets){
+                    unsigned long quiet;
+                    bitScanForward(&quiet, knightQuiets);
+                    clearBit(knightQuiets, quiet);
+                    addMoveToList(encodeMove(knight, quiet, n, EMPTY, EMPTY, false, false, false, ((squareBitBoard(quiet) & knightCheckers) > 0)), moveList);
+                }
+                // Captures
+                while (knightCaptures){
+                    unsigned long capture;
+                    bitScanForward(&capture, knightCaptures);
+                    clearBit(knightCaptures, capture);
+                    Piece captured = pieceOn(capture);
+                    addMoveToList(encodeMove(knight, capture, n, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & knightCheckers) > 0)), moveList);
+                }
+            }
+        }
+        // Bishop Moves
+        // Bishop move generation is a tad more difficult, due to it being a slider, but we have magic bitboards, so it won't be as bad
+        {
+            BitBoard bishops = bitboards[b];
+            while (bishops){
+                unsigned long bishop;
+                bitScanForward(&bishop, bishops);
+                clearBit(bishops, bishop);
+                BitBoard bishopQuiets = getBishopAttack(bishop, occupancies[BOTH]);
+                BitBoard bishopCaptures = bishopQuiets & occupancies[them];
+                bishopQuiets &= ~occupancies[BOTH];
+                // Quiet moves
+                while (bishopQuiets){
+                    unsigned long quiet;
+                    bitScanForward(&quiet, bishopQuiets);
+                    clearBit(bishopQuiets, quiet);
+                    addMoveToList(encodeMove(bishop, quiet, b, EMPTY, EMPTY, false, false, false, ((squareBitBoard(quiet) & bishopCheckers) > 0)), moveList);
+                }
+                // Captures
+                while (bishopCaptures){
+                    unsigned long capture;
+                    bitScanForward(&capture, bishopCaptures);
+                    clearBit(bishopCaptures, capture);
+                    Piece captured = pieceOn(capture);
+                    addMoveToList(encodeMove(bishop, capture, b, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & bishopCheckers) > 0)), moveList);
+                }
+            }
+        }
+        // Rook Moves
+        // Rook move generation is a tad more difficult, due to it being a slider, but we have magic bitboards, so it won't be as bad
+        {
+            BitBoard rooks = bitboards[r];
+            while (rooks){
+                unsigned long rook;
+                bitScanForward(&rook, rooks);
+                clearBit(rooks, rook);
+                BitBoard rookQuiets = getRookAttack(rook, occupancies[BOTH]);
+                BitBoard rookCaptures = rookQuiets & occupancies[them];
+                rookQuiets &= ~occupancies[BOTH];
+                // Quiet moves
+                while (rookQuiets){
+                    unsigned long quiet;
+                    bitScanForward(&quiet, rookQuiets);
+                    clearBit(rookQuiets, quiet);
+                    addMoveToList(encodeMove(rook, quiet, r, EMPTY, EMPTY, false, false, false, ((squareBitBoard(quiet) & rookCheckers) > 0)), moveList);
+                }
+                // Captures
+                while (rookCaptures){
+                    unsigned long capture;
+                    bitScanForward(&capture, rookCaptures);
+                    clearBit(rookCaptures, capture);
+                    Piece captured = pieceOn(capture);
+                    addMoveToList(encodeMove(rook, capture, r, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & rookCheckers) > 0)), moveList);
+                }
+            }
+        }
+        // Queen Moves
+        // Queen move generation is a tad more difficult, due to it being a slider, but we have magic bitboards, so it won't be as bad
+        {
+            BitBoard queens = bitboards[q];
+            while (queens){
+                unsigned long queen;
+                bitScanForward(&queen, queens);
+                clearBit(queens, queen);
+                BitBoard queenQuiets = getQueenAttack(queen, occupancies[BOTH]);
+                BitBoard queenCaptures = queenQuiets & occupancies[them];
+                queenQuiets &= ~occupancies[BOTH];
+                // Quiet moves
+                while (queenQuiets){
+                    unsigned long quiet;
+                    bitScanForward(&quiet, queenQuiets);
+                    clearBit(queenQuiets, quiet);
+                    addMoveToList(encodeMove(queen, quiet, q, EMPTY, EMPTY, false, false, false, ((squareBitBoard(quiet) & queenCheckers) > 0)), moveList);
+                }
+                // Captures
+                while (queenCaptures){
+                    unsigned long capture;
+                    bitScanForward(&capture, queenCaptures);
+                    clearBit(queenCaptures, capture);
+                    Piece captured = pieceOn(capture);
+                    addMoveToList(encodeMove(queen, capture, q, captured, EMPTY, false, false, false, ((squareBitBoard(capture) & queenCheckers) > 0)), moveList);
+                }
+            }
+        }
+        // King moves 
+        // Normal king moves are very easy to generate, due to its leaper nature, but we also need to generate castling moves
+        // We also already have the king position stored in the ourKing variable
+        {
+            BitBoard kingQuiets = kingAttacks[ourKing] & ~occupancies[BOTH];
+            BitBoard kingCaptures = kingAttacks[ourKing] & occupancies[them];
+            // Quiet moves
+            while (kingQuiets){
+                unsigned long quiet;
+                bitScanForward(&quiet, kingQuiets);
+                clearBit(kingQuiets, quiet);
+                // A king can't give check so we don't need to check for check
+                addMoveToList(encodeMove(ourKing, quiet, k, EMPTY, EMPTY, false, false, false, false), moveList);
+            }
+            // Captures
+            while (kingCaptures){
+                unsigned long capture;
+                bitScanForward(&capture, kingCaptures);
+                clearBit(kingCaptures, capture);
+                Piece captured = pieceOn(capture);
+                // A king can't give check so we don't need to check for check
+                addMoveToList(encodeMove(ourKing, capture, k, captured, EMPTY, false, false, false, false), moveList);
+            }
+            // Castling moves
+            // In order to castle we need to check if the king is in check, and if the Castling flags are set
+            bool inCheck = isSquareAttacked(ourKing, them);
+            if (!inCheck){
+                if (castlingRights & BKCastle){
+                    // We need to check if the passing squares are attacked or occupied, in which case we can't castle
+                    if (!((squareBitBoard(f8) | squareBitBoard(g8)) & occupancies[BOTH])){
+                        // We also need to check if the king is in check, and if the rook is in check
+                        if(!isSquareAttacked(f8, them) && !isSquareAttacked(g8, them)){
+                            // A castling move can be checj if the rook that lands onf8 is on the rookCheckers bitboard
+                            addMoveToList(encodeMove(ourKing, g8, k, EMPTY, EMPTY, false, true, false, ((squareBitBoard(f8) & rookCheckers) > 0)), moveList);
+                        }
+                    }
+                }
+                if (castlingRights & BQCastle){
+                    // We need to check if the passing squares are attacked or occupied, in which case we can't castle
+                    if (!((squareBitBoard(d8) | squareBitBoard(c8) | squareBitBoard(b8)) & occupancies[BOTH])){
+                        // We also need to check if the king is in check, and if the rook is in check
+                        if(!isSquareAttacked(d8, them) && !isSquareAttacked(c8, them)){
+                            // A castling move can be checj if the rook that lands onf8 is on the rookCheckers bitboard
+                            addMoveToList(encodeMove(ourKing, c8, k, EMPTY, EMPTY, false, true, false, ((squareBitBoard(d8) & rookCheckers) > 0)), moveList);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+

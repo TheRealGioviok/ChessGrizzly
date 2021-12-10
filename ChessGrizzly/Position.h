@@ -6,6 +6,7 @@
 // The Position.h file contains the Position class, which stores information about the position of the chessboard.
 // It can also generate moves and check if a move is legal.
 
+
 class Position {
 public:
 
@@ -37,9 +38,6 @@ public:
 
     // The FEN constructor instantiates the position with the FEN string.
     Position(const char *fen);
-
-    // The copy constructor copies the position.
-    Position(const Position &pos);
 
     // The moveList constructor instantiates the position with the move list.
     // Position(moveList *moves);
