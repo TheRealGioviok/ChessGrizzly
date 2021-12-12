@@ -80,7 +80,7 @@ int executeCommand(Game *game, char* command){
     }
 
     if (eval){
-        std::cout << "The eval command is not yet implemented" << std::endl;
+        std::cout << "Static evaluation for current position (from side to move perspective): " << pestoEval(&(game->pos)) << std::endl;
     }
 
     return 0;
@@ -93,6 +93,9 @@ int positionCommand(Game *game, char* command){
     // - moves <move_list> : sets the position to the specified move list
 
     // we will search for the first occurrence of a command
+
+    game->pos.wipe();
+
     char* fen = strstr((char *)command, "fen");
     char* startposCMD = strstr((char *)command, "startpos");
     char* moves = strstr((char *)command, "moves");
@@ -153,14 +156,80 @@ int goCommand(Game* game, char* command){
     }
 
     if(winc){
-        game->winc = atoi(winc + 6);
+        game->winc = atoi(winc + 5);
     }
 
     if(binc){
-        game->binc = atoi(binc + 6);
+        game->binc = atoi(binc + 5);
     }
 
     game->startSearch();
 
     return 0;
+}
+
+#define MAX_INPUT_LENGTH 2000
+void uciLoop(Game* game){
+
+    // Print engine prompt
+    std::cout << "Chess Grizzly> ";
+
+    // The uciLoop is implemented in a way that it can be interrupted by the user, even if the engine is searching
+    // The user can type "quit" to exit the engine
+
+    std::cout.flush();
+    std::cin.clear();
+    std::cin.ignore(500, '\n');
+    std::cin.sync();
+
+    // define user / GUI input buffer
+    char userInput[MAX_INPUT_LENGTH];
+
+    // print the engine info
+    std::cout << "id name Chess Grizzly 0.1" << std::endl;
+    std::cout << "id author G.M. Manduca" << std::endl;
+    std::cout << "uciok" << std::endl;
+
+    std::string input = "";
+
+    // loop
+    while(1){
+        // print the engine prompt
+        std::cout << std::endl << "Chess Grizzly> ";
+
+        // reset the input string
+        input = "";
+
+        // read the user input
+        std::cin.getline(userInput, MAX_INPUT_LENGTH);
+
+        //print received input
+        std::cout << "Received input: " << userInput << std::endl;
+
+
+
+        // make sure the user input is not new line
+        if (userInput[0] == '\n' || userInput == ""){
+            continue;
+        }
+
+        // execute the command
+        if(executeCommand(game, userInput) == 1 || userInput == "quit") {
+            break;
+        }
+
+        // flush the output
+        std::cout.flush();
+
+        std::cout << std::flush;
+
+        // clear the input buffer
+        std::cin.clear();
+
+        // sync the input buffer
+        std::cin.sync();
+
+        // clear the user input buffer
+        memset(userInput, 0, MAX_INPUT_LENGTH);
+    }
 }

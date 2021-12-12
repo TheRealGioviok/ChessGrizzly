@@ -1,6 +1,8 @@
 #include "BBmacros.h"
 #include "tables.h"
+#include "evaluation.h"
 #include <cassert>
+
 
 U32 state = 1804289383;
 
@@ -95,7 +97,9 @@ void initPawnAttacks(){
     forEachSquare(square){
         pawnAttacks[WHITE][square] = maskPawnAttacks(WHITE, square);
         pawnAttacks[BLACK][square] = maskPawnAttacks(BLACK, square);
+        std::cout << "Initializing pawn attacks: " << square + 1 << "/64\r";
     }
+    std::cout << std::endl;
 }
 
 BitBoard maskBishopAttacks(Square square){
@@ -394,9 +398,10 @@ void initRookAttacks(){
 }
 
 void initSliders(bool bishop){
+
     // loop over squares
     for (Square square = 0; square <= h1; square++){
-
+        std::cout << "Initializing " << (bishop ? "bishop" : "rook") << " moves : " << square + 1 << "/64\r";
         // loop over 64 board squares
         for (int square = 0; square < 64; square++) {
             // init bishop & rook masks
@@ -411,7 +416,7 @@ void initSliders(bool bishop){
 
             // init occupancy indicies
             int occupancy_indicies = (1 << relevant_bits_count);
-
+            
             // loop over occupancy indicies
             for (int index = 0; index < occupancy_indicies; index++)
             {
@@ -443,6 +448,7 @@ void initSliders(bool bishop){
             }
         }
     }
+    std::cout << std::endl;
 }
 
 inline BitBoard getBishopAttack(Square square, BitBoard occupancy) {
@@ -471,9 +477,16 @@ inline BitBoard getQueenAttack(Square square, BitBoard occupancy) {
 }
 
 void initAll(){
+
+    U64 timeStart = getTime64();
+
     initPawnAttacks();
     initSliders(true);
     initSliders(false);
+    initTables();
+
+    std::cout << "Initialization completed in " << (getTime64() - timeStart) / 1000 << " ms" << std::endl;
+    std::cout << "Type 'isReady' to continue" << std::endl << std::endl;
     // initBishopAttacks();
     // initRookAttacks();
 }

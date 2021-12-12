@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="BBmacros.cpp" />
     <ClCompile Include="ChessGrizzly.cpp" />
+    <ClCompile Include="evaluation.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Move.cpp" />
     <ClCompile Include="Position.cpp" />
@@ -153,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BBmacros.h" />
+    <ClInclude Include="evaluation.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Move.h" />
     <ClInclude Include="Position.h" />

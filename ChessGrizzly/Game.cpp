@@ -210,5 +210,6 @@ void Game::reset(){
 }
 
 void Game::startSearch(){
+    std::cout << "Starting search:\nDepth limit " << (int)depth << "\nWhite time " << ((int)wtime)/1000 << " + " << ((int)winc)/1000 << "\nBlack time " << ((int)btime)/1000 << " + " << ((int)binc)/1000 << std::endl;
     std::cout << "Search not implemented yet" << std::endl;
 }

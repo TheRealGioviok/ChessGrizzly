@@ -44,6 +44,7 @@ typedef wchar_t pieceChar;
 #define bitScanReverse _BitScanReverse64 //MS1B
 #define rankOf(square) ((square) >> 3)
 #define fileOf(square) ((square) & 7)
+#define flipSquare(square) ((square) ^ 56)
 #define makeSquare(rank, file) ((rank) * 8 + (file))
 #define forEachSquare(square) for (Square square = a8; square <= h1; square++)
 #define forEachRank(rank) for (int rank = 0; rank <= 8; rank++)

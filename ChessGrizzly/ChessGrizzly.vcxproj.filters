@@ -36,6 +36,9 @@
     <ClCompile Include="uci.cpp">
       <Filter>File di origine</Filter>
     </ClCompile>
+    <ClCompile Include="evaluation.cpp">
+      <Filter>File di origine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BBmacros.h">
@@ -54,6 +57,9 @@
       <Filter>File di intestazione</Filter>
     </ClInclude>
     <ClInclude Include="uci.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluation.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
   </ItemGroup>

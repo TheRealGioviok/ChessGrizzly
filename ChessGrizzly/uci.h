@@ -7,6 +7,7 @@
 #include "Move.h"
 #include "Position.h"
 #include "Game.h"
+#include "evaluation.h"
 
 /**
  * @brief The uciLoop function is the main function of the engine.
