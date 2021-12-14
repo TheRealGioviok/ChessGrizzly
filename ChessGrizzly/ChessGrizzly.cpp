@@ -12,11 +12,11 @@
 #include "uci.h"
 #include <intrin.h>
 int main() {
-    std::cout << "          ----------------------------------" << std::endl;
+    std::cout << "          /--------------------------------\\" << std::endl;
     std::cout << "          |========= ChessGrizzly =========|" << std::endl;
     std::cout << "          |======== Version: 0.1.0 ========|" << std::endl;
     std::cout << "          |===== Author: G.M. Manduca =====|" << std::endl;
-    std::cout << "          ----------------------------------" << std::endl << std::endl;
+    std::cout << "          \\--------------------------------/" << std::endl << std::endl;
 
     initAll();
 
