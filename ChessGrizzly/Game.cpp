@@ -297,7 +297,7 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
             alpha = score;
             // history update
             if (pieceCaptured(move) == EMPTY)
-                mainHistory[ply][pieceMoved(move)][targetSquare(move)] = depth * depth;
+                mainHistory[ply][pieceMoved(move)][targetSquare(move)] += depth;
             if (score >= beta) {
                 if (pieceCaptured(move) == EMPTY) {
                     // Update killer moves
