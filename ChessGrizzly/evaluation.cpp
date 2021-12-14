@@ -220,7 +220,10 @@ Score pestoEval(Position *pos){
     // phase is capped to 24, in case of early promotion
     Score mgPhase = min(24, gamePhase);
     Score egPhase = 24 - mgPhase;
+ 
+    // We add a tempo bonus to the score, meaning that we will give a bonus to the side that has to move (10 cp)
+    // Score tempoBonus = (side == WHITE) ? 10 : -10;
 
-    return (mgScore * mgPhase + egScore * egPhase) / 24;
+    return (mgScore * mgPhase + egScore * egPhase) / 24 + 10;
 
 }
