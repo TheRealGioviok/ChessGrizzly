@@ -7,7 +7,7 @@
 #include <iostream>
 #include <intrin.h>
 #include <windows.h>
-
+#include <algorithm>
 
 // DATA TYPES
 typedef unsigned long long U64;
@@ -137,6 +137,13 @@ enum Squares{
 const char charPieces[13] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', '.'};
 const char promotionPieces[13] = {'p', 'n', 'b', 'r', 'q', 'k', 'p', 'n', 'b', 'r', 'q', 'k', ' '};
 const pieceChar pieceChars[13] = {'♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', '.'};
+
+// infinity
+const Score infinity = 32000;
+// The value of mate in 0 ply
+const Score mateValue = 31000;
+// When the score is this value or above, it means there is a forced mate
+const Score mateScore = 30000;
 
 enum cstlRights{
     WKCastle = 1,
