@@ -1,6 +1,5 @@
 #pragma once
 #include "BBmacros.h"
-
 #include "tables.h"
 
 // The structure of a move is as follows:
@@ -62,7 +61,8 @@ void printMove(Move move);
 typedef U64 ScoredMove;
 
 #define scoreOfMove(move) ((move) >> 32)
-#define onlyMove(move) ((move) & 0xFFFFFFFF)
+
+#define onlyMove(move) ((move) & ((1 << 27) - 1))
 
 // All the moves are stored in the MoveList structure.
 struct MoveList {
@@ -79,7 +79,7 @@ struct MoveList {
  * @param move The move to add
  * @param list The list to add the move to
  */
-void addMoveToList(ScoredMove move, MoveList *moveList);
+extern inline void addMoveToList(ScoredMove move, MoveList *moveList);
 
 /**
  * @brief The printMoveList function prints a move list in a human readable format (UCI)
