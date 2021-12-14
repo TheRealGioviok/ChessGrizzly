@@ -28,6 +28,9 @@ public:
     // The fullMoveNumber variable stores the number of the full move.
     U8 fullMoveNumber;
 
+    // The lastMove variable stores the last move that was made.
+    Move lastMove = 0;
+
     /**
      * @brief The printBoard function prints the board to the console.
      */
