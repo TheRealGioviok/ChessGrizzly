@@ -3,6 +3,13 @@
 // The game class handles the game logic, making moves, checking for wins, etc.
 #include "Position.h"
 #include "tables.h"
+#include "evaluation.h"
+
+const U8 maxPly = 64;
+extern U32 mainHistory[maxPly][12][64];
+extern Move counterMoves[2][64][64];
+extern Move killerMoves[2][maxPly];
+extern U16 ply;
 
 class Game {
 public:
@@ -15,7 +22,6 @@ public:
     
     U64 nodes = 0;
     Position pos;
-    U16 ply = 0;
     Depth depth = 0;
     U32 moveTime = 0;
     U32 wtime = 0;
@@ -23,6 +29,11 @@ public:
     U32 winc = 0;
     U32 binc = 0;
     bool stopped = false;
+
+    
+
+    // The bestMove variable is used to store the best move found by the last completed search.
+    Move bestMove = 0;
 
     /**
      * @brief The startSearch function is the main function for the search. It calls the search function with the internal parameters.
@@ -76,6 +87,23 @@ public:
 
     // The FEN constructor.
     Game(const char *fen);
+
+    /**
+     * @brief The negaMax function is the main search function. It will search the current position for the given depth.
+     * It will also use alpha-beta pruning to reduce the search space.
+     * @param alpha The alpha value for the alpha-beta pruning.
+     * @param beta The beta value for the alpha-beta pruning.
+     * @param depth The depth to search at.
+     */
+    Score negaMax(Score alpha, Score beta, Depth depth);
+
+    /**
+     * @brief The quiescence function is a special search function for the quiescence search. It will search the current position for the given depth.
+     * It will also use alpha-beta pruning to reduce the search space.
+     * @param alpha The alpha value for the alpha-beta pruning.
+     * @param beta The beta value for the alpha-beta pruning.
+     */
+    Score quiescence(Score alpha, Score beta);
 
     /**
      * @brief The getLegalOf function is a wrapper for the internal getLegalOf of the internal position.

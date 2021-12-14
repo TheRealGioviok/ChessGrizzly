@@ -2,6 +2,11 @@
 
 #include "Game.h"
 
+U32 mainHistory[maxPly][12][64] = {{{0}}};
+Move counterMoves[2][64][64] = {{{0}}};
+Move killerMoves[2][maxPly] = {{0}};
+U16 ply = 0;
+
 bool Game::makeMove(Move move){
     // If the move is a null move, we return false
     if (move){
@@ -88,7 +93,7 @@ bool Game::makeMove(Move move){
         if (pos.isSquareAttacked(ourKing, pos.turn)){
             return false;
         }
-
+        pos.lastMove = onlyMove(move);
         return true;
     }
     return false;
@@ -209,7 +214,163 @@ void Game::reset(){
     // Add stuff here when implementing heuristics
 }
 
+#define ASPIRATION_WINDOW_SIZE 30
 void Game::startSearch(){
     std::cout << "Starting search:\nDepth limit " << (int)depth << "\nWhite time " << ((int)wtime)/1000 << " + " << ((int)winc)/1000 << "\nBlack time " << ((int)btime)/1000 << " + " << ((int)binc)/1000 << std::endl;
-    std::cout << "Search not implemented yet" << std::endl;
+    
+    nodes = 0ULL;
+    // clear mainHistory, killerMoves, countermoves
+    memset(mainHistory, 0, sizeof(mainHistory));
+    memset(killerMoves, 0, sizeof(killerMoves));
+    memset(counterMoves, 0, sizeof(counterMoves));
+
+    pos.lastMove = 0;
+    
+    // Iterative deepening with aspiration windows
+    Score score = negaMax(-infinity, +infinity, 1);
+    std::cout << "info score depth 1 cp " << score << " nodes " << nodes << " moves ";
+    printMove(bestMove);
+    std::cout << std::endl;
+
+    for (Depth d = 2; d <= depth; d++){
+        nodes = 0ULL;
+        score = negaMax(score - ASPIRATION_WINDOW_SIZE, score + ASPIRATION_WINDOW_SIZE, d);
+        if ((score < score - ASPIRATION_WINDOW_SIZE) || (score > score + ASPIRATION_WINDOW_SIZE)){
+            std::cout << "Research at full size for depth " << d << std::endl;
+            score = negaMax(-infinity, infinity, d);
+        }
+        std::cout << "info score depth " << (int)d << " cp " << score << " nodes " << nodes << " moves ";
+        printMove(bestMove);
+        std::cout << std::endl;
+    }
+
+    std::cout << "bestmove ";
+    printMove(bestMove);
+    std::cout << std::endl;
+}
+
+Score Game::negaMax(Score alpha, Score beta, Depth depth){
+
+    // If we have reached the depth limit, return the heuristic value
+    if (depth == 0){
+        return quiescence(alpha, beta);
+    }
+
+    if (depth >= maxPly){
+        return pestoEval(&pos);
+    }
+
+    // Increment the number of nodes
+    nodes++;
+
+    // Are we in check?
+    unsigned long kingSquare;
+    bitScanForward(&kingSquare, pos.bitboards[K + pos.turn * 6]);
+    bool inCheck = pos.isSquareAttacked(kingSquare, pos.turn ^ 1);
+
+    // Generate all the moves
+    MoveList *moveList = new MoveList();
+    generateMoves(moveList);
+
+    Position save = pos;
+    int legalMoves = 0;
+
+    for (int count = 0; count < moveList->count; count++){
+
+        // The move
+        Move move = onlyMove(moveList->moves[count]);
+
+        ply++;
+        // Make the move
+        if (!makeMove(moveList->moves[count])){
+            --ply;
+            pos = save;
+            continue;
+        }
+
+        legalMoves++;
+        Score score = -negaMax(-beta, -alpha, depth - 1);
+        --ply;
+        pos = save;
+
+        if (score > alpha){
+            alpha = score;
+            // history update
+            if (pieceCaptured(move) == EMPTY)
+                mainHistory[ply][pieceMoved(move)][targetSquare(move)] = depth * depth;
+            if (score >= beta) {
+                if (pieceCaptured(move) == EMPTY) {
+                    // Update killer moves
+                    killerMoves[0][depth] = killerMoves[1][depth];
+                    killerMoves[1][depth] = move;
+
+                    // Update countermoves
+                    counterMoves[pos.turn][sourceSquare(move)][targetSquare(move)] = move;
+                }
+                delete moveList;
+                return beta;
+            }
+            if (!ply)
+            {
+                // Update the best move
+                bestMove = move;
+            }
+        }
+    }
+    
+    delete moveList;
+    
+    if (!legalMoves){
+        if (inCheck){
+            return -mateValue + ply;
+        }
+        else{
+            return 0;
+        }
+    }
+
+    return alpha;
+}
+
+Score Game::quiescence(Score alpha, Score beta){
+
+    Score eval = pestoEval(&pos);
+    if (eval >= beta)
+        return beta;
+    if (eval > alpha)
+        alpha = eval;
+    if (ply >= maxPly)
+        return eval;
+
+    // Generate all the moves
+    MoveList *moveList = new MoveList();
+    generateMoves(moveList);
+
+    // Loop through all the moves
+    Position save = pos;
+
+    // Are we in check?
+    unsigned long kingSquare;
+    bitScanForward(&kingSquare, pos.bitboards[K + pos.turn * 6]);
+    bool inCheck = pos.isSquareAttacked(kingSquare, pos.turn ^ 1);
+
+    for (int i = 1; i < moveList->count; i++){
+        Move move = onlyMove(moveList->moves[i]);
+        if (((pieceCaptured(move) != EMPTY)) && makeMove(move)){
+            ++ply;
+            Score score = -quiescence(-beta, -alpha);
+            --ply;
+            pos = save;
+            if (score >= beta){
+                delete moveList;
+                return beta;
+            }
+            if (score > alpha){
+                alpha = score;
+            }
+        }
+    }
+
+    delete moveList;
+    return alpha;
 }
