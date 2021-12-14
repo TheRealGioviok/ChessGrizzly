@@ -14,6 +14,7 @@ int executeCommand(Game *game, char* command){
     // - quit : exits the engine
     // - print : prints the current position
     // - eval : prints the static evaluation of the current position
+    // - divide : prints the perft results for the current position, divided for each move
 
     // we will search for the first occurrence of a command
     char* isReady = strstr((char *)command, "isready");
@@ -26,6 +27,7 @@ int executeCommand(Game *game, char* command){
     char* quit = strstr((char *)command, "quit");
     char* print = strstr((char *)command, "print");
     char* eval = strstr((char *)command, "eval");
+    char* divide = strstr((char *)command, "divide");
 
     // The order of execution is the following:
     // - isready
@@ -38,6 +40,7 @@ int executeCommand(Game *game, char* command){
     // - quit
     // - print
     // - eval
+    // - divide
 
     if (isReady){
         std::cout << "readyok" << std::endl;
@@ -83,6 +86,10 @@ int executeCommand(Game *game, char* command){
         std::cout << "Static evaluation for current position (from side to move perspective): " << pestoEval(&(game->pos)) << std::endl;
     }
 
+    if (divide){
+        std::cout << "Perft results for current position:" << std::endl;
+        game->divide(atoi(divide + 7));
+    }
     return 0;
 }
 
