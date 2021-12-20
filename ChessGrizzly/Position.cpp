@@ -943,8 +943,8 @@ void Position::generateCaptures(MoveList *moveList){
     bitScanForward(&ourKing, bitboards[us * 6 + K]);
     unsigned long theirKing = 0;
     bitScanForward(&theirKing, bitboards[them * 6 + K]);
-
     BitBoard pawnCheckers = pawnAttacks[them][theirKing];
+
     BitBoard knightCheckers = knightAttacks[theirKing];
     BitBoard bishopCheckers = getBishopAttack(theirKing, occupancies[BOTH]);
     BitBoard rookCheckers = getRookAttack(theirKing, occupancies[BOTH]);
@@ -1373,6 +1373,6 @@ inline void Position::addMoveToList(ScoredMove move, MoveList *list) {
     score += (204800ULL * (oMove == counterMoves[turn ^ 1][0][0]));
     score += (3200ULL * isCheckMove(move));
     score += (U64)mainHistory[ply][pieceMoved(move)][targetSquare(move)];
-
+    score += (U64)centerBonusTable10[targetSquare(move)];
     list->moves[list->count++] = (score << 32) | move;
 }
