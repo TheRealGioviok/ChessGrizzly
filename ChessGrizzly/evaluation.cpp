@@ -20,6 +20,8 @@ Score simpleEval(Position *pos){
     score -= popCount(pos->bitboards[q]) * 900;
 
     score *= 1 - 2 * pos->turn;
+
+    return score;
 }
 
 Score mgTables[12][64] = {{0}};
@@ -61,7 +63,7 @@ Score pestoEval(Position *pos){
     Score eg[2] = { 0, 0 };
     Score gamePhase = 0;
 
-    // White pawns
+    // White pawns P, N, B, R, Q, K - p, n, b, r, q, k
     {
         BitBoard pawns = pos->bitboards[P];
         while (pawns){
@@ -214,6 +216,10 @@ Score pestoEval(Position *pos){
     Side side = pos->turn;
     Side other = side ^ 1;
 
+    // add a tempo bonus
+    mg[side] += 23;
+    eg[side] += 11;
+
     Score mgScore = mg[side] - mg[other];
     Score egScore = eg[side] - eg[other];
 
@@ -224,6 +230,6 @@ Score pestoEval(Position *pos){
     // We add a tempo bonus to the score, meaning that we will give a bonus to the side that has to move (10 cp)
     // Score tempoBonus = (side == WHITE) ? 10 : -10;
 
-    return (mgScore * mgPhase + egScore * egPhase) / 24 + 10;
+    return (mgScore * mgPhase + egScore * egPhase) / 24;
 
 }
