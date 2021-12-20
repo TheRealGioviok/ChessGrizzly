@@ -26,8 +26,7 @@ int main() {
     // We test the uci command parser
     uciLoop(&game);
 
-    executeCommand(&game, (char*)std::string("position startpos moves e2e4 e7e5").c_str());
-    executeCommand(&game, (char*)std::string("print").c_str());
+    // executeCommand(&game, (char*)std::string("go depth 8").c_str());
 
     return 0;
 }
