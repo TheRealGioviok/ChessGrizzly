@@ -23,7 +23,3 @@ void printMoveList(MoveList *moveList, bool printScore){
         std::cout << std::endl;
     }
 }
-
-inline U8 lmrReduction(U8 depth, U8 moveNumber){
-  
-}

@@ -22,7 +22,6 @@ int main() {
 
     Game game;
 
-
     // We test the uci command parser
     uciLoop(&game);
 

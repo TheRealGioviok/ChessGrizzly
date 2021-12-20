@@ -93,11 +93,3 @@ const U8 castlingRightsMask[64] = {
     15, 15, 15, 15, 15, 15, 15, 15,
     13, 15, 15, 15, 12, 15, 15, 14
 };
-
-/**
- * @brief The lmrReduction function returns the reduction for a move based on the depth and the move number
- * @param depth The depth of the search
- * @param moveNumber The move number
- * @return The reduction
- */
-extern inline U8 lmrReduction(U8 depth, U8 moveNumber);
