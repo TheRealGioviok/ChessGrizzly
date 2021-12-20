@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 #include "BBmacros.h"
 #include "tables.h"
@@ -35,6 +36,11 @@ public:
      * @brief The printBoard function prints the board to the console.
      */
     void printBoard();
+    /**
+     * @brief The getString function returns a string representation of the position.
+     * @return A string representation of the position.
+     */
+    std::string getString();
 
     // The default constructor instantiates the position with the standard chess starting position.
     Position();
@@ -154,9 +160,31 @@ public:
     void generateMoves(MoveList *moves);
 
     /**
+     * @brief The generateCaptures function generates all the pseudo-legal captures for the current position.
+     * @param moves The move list to add the moves to.
+     * @note Moves are pseudo-legal, meaning that they are legal if the king is not in check. This will be checked by the search routine.
+     * @note This function is used by the quiescence search, since it does not generate non-captures.
+     */
+    void generateCaptures(MoveList *moves);
+
+    /**
      * @brief The getLegalOf function gets a move string and compares to the list of legal moves.
      * @param move The move to check.
      * @return The legal move, or NULL if the move is not legal.
      */
     Move getLegalOf(char * move);
+
+    /**
+     * @brief The mayBeZugzwang function checks if the current position has a good risk of being zugzwang.
+     * @return true if the position is likely a zugzwang, false otherwise.
+     */
+    bool mayBeZugzwang();
+
+    /**
+     * @brief The addMoveToList function adds a move to a move list
+     * @param move The move to add
+     * @param list The list to add the move to
+     */
+    void addMoveToList(ScoredMove move, MoveList *moveList);
+
 };
