@@ -49,6 +49,8 @@ typedef U32 Move;
     (((doublePawnPush) & 0x1) << 26) | \
     (((check) & 0x1) << 27))
 
+#define okToReduce(move) (pieceCaptured(move) == EMPTY && promotionOf(move) == EMPTY && isCheckMove(move) == 0)
+
 /**
  * @brief The printMove function prints a move in a human readable format (UCI)
  * @param move The move to print
@@ -75,13 +77,6 @@ struct MoveList {
 // If needed, #include "Position.h"
 
 /**
- * @brief The addMoveToList function adds a move to a move list
- * @param move The move to add
- * @param list The list to add the move to
- */
-extern inline void addMoveToList(ScoredMove move, MoveList *moveList);
-
-/**
  * @brief The printMoveList function prints a move list in a human readable format (UCI)
  * @param moveList The move list to print
  * @param printScore Whether or not to print the score of the move 
@@ -98,3 +93,11 @@ const U8 castlingRightsMask[64] = {
     15, 15, 15, 15, 15, 15, 15, 15,
     13, 15, 15, 15, 12, 15, 15, 14
 };
+
+/**
+ * @brief The lmrReduction function returns the reduction for a move based on the depth and the move number
+ * @param depth The depth of the search
+ * @param moveNumber The move number
+ * @return The reduction
+ */
+extern inline U8 lmrReduction(U8 depth, U8 moveNumber);
