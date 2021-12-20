@@ -55,6 +55,16 @@ extern BitBoard pawnAttacks[2][64];
 extern BitBoard knightAttacks[64];
 extern BitBoard kingAttacks[64];
 
+// Bonus for low depth move ordering
+const int centerBonusTable10[64] = {0, 10, 20, 30, 30, 20, 10, 0,
+                                    10, 20, 20, 30, 30, 20, 20, 10,
+                                    0, 10, 30, 30, 30, 30, 10, 0,
+                                    5, 10, 25, 30, 30, 20, 10, 5,
+                                    5, 10, 20, 30, 30, 25, 10, 5,
+                                    0, 10, 30, 30, 30, 30, 10, 0,
+                                    10, 20, 20, 30, 30, 20, 20, 10,
+                                    0, 10, 20, 30, 30, 20, 10, 0};
+
 // LMR reduction table
 extern U8 reductionTable[128][128];
 
@@ -233,6 +243,15 @@ const U32 MvvLvaTable[12][12] = {
     100, 200, 300, 400, 500, 600,   100, 200, 300, 400, 500, 600
 };
 
+// The squaresAhead array contains the bitmask of squares ahead of a piece for a given side
+extern BitBoard squaresAhead[2][64];
+
+// The adjacentFiles array contains the bitmask of adjacent files for a given file (used for pawn evaluation)
+extern BitBoard adjacentFiles[8];
+
+// The backwardPawnMask array contains the bitmask of squares that, if not occupied by any other pawn, render the pawn on the current square a backward pawn
+extern BitBoard backwardPawnMask[2][64];
+
 // The bishop's attack mask
 extern BitBoard bishopMask[64];
 
@@ -400,4 +419,11 @@ void initRookAttacks();
  * @note This function should be called only at the beginning of the program (in the main function).
  */
 void initLMRTable();
+
+/**
+ * @brief The initUtilityMasks function is used to populate the utility masks.
+ * These mask are later used to speed up the search, as well as the evaluation.
+ * @note This function should be called only at the beginning of the program.
+ */
+void initUtilityMasks();
 

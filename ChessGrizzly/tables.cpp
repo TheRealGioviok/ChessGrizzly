@@ -28,6 +28,15 @@ BitBoard kingAttacks[64] = {    0x302, 0x705, 0xe0a, 0x1c14, 0x3828, 0x7050, 0xe
                                 0x203000000000000, 0x507000000000000, 0xa0e000000000000, 0x141c000000000000, 0x2838000000000000, 0x5070000000000000, 0xa0e0000000000000, 0x40c0000000000000
                             };
 
+// The squaresAhead array contains the bitmask of squares ahead of a piece for a given side
+BitBoard squaresAhead[2][64] = { { 0 } };
+
+// The adjacentFiles array contains the bitmask of adjacent files for a given file (used for pawn evaluation)
+BitBoard adjacentFiles[8] = { 0 };
+
+// The backwardPawnMask array contains the bitmask of squares that, if not occupied by any other pawn, render the pawn on the current square a backward pawn
+BitBoard backwardPawnMask[2][64] = { { 0 } };
+
 // The bishop's attack mask
 BitBoard bishopMask[64];
 
@@ -491,6 +500,37 @@ void initLMRTable(){
     reductionTable[2][2] = 0;
 }
 
+void initUtilityMasks(){
+    // squares ahead of a given square for a given side
+    forEachSquare(square) {
+        // White: Squares ahead are all the bits to the right of the square, & with the file mask
+        // Black: Squares ahead are all the bits to the left of the square, & with the file mask
+        squaresAhead[WHITE][square] = (squareBitBoard(square) - 1) & bbFile[fileOf(square)];
+        squaresAhead[BLACK][square] = bbFile[fileOf(square)] ^ (squaresAhead[WHITE][square] ^ squareBitBoard(square));
+    }
+
+    // adjacent files
+    forEachFile(file){
+        if (file)
+            adjacentFiles[file] |= bbFile[file - 1];
+        if (file < 7)
+            adjacentFiles[file] |= bbFile[file + 1];
+    }
+
+    // backward pawn
+    forEachSquare(square) {
+        int file = fileOf(square);
+        if (file) {
+            backwardPawnMask[WHITE][square] = squaresAhead[BLACK][square - 1];
+            backwardPawnMask[BLACK][square] = squaresAhead[WHITE][square - 1];
+        }
+        if (file < 7) {
+            backwardPawnMask[WHITE][square] |= squaresAhead[BLACK][square + 1];
+            backwardPawnMask[BLACK][square] |= squaresAhead[WHITE][square + 1];
+        }
+    }
+}
+
 void initAll(){
 
     U64 timeStart = getTime64();
@@ -500,6 +540,7 @@ void initAll(){
     initSliders(false);
     initTables();
     initLMRTable();
+    initUtilityMasks();
 
 
     std::cout << "Initialization completed in " << (getTime64() - timeStart) / 1000 << " ms" << std::endl;
