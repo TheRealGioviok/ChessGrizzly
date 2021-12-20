@@ -9,6 +9,8 @@
 #include "Game.h"
 #include "evaluation.h"
 
+extern int quit;
+
 /**
  * @brief The uciLoop function is the main function of the engine.
  * It is called by the main function of the engine.
@@ -43,3 +45,22 @@ int positionCommand(Game* game, char* command);
  */
 int goCommand(Game* game, char* command);
 
+/**
+ * @brief The inputWaiting function waits for input from the GUI. The code is based on the code from Code Monkey King's BBC chess engine which is based on the code from VICE by BlueFeverSoftware.
+ * @return The return value is the length of the input string (0 means no input).
+ * @note This function is responsible for async communication with the GUI.
+ */
+int inputWaiting();
+
+/**
+ * @brief The readInput function reads the input from the GUI. The code is based on the code from Code Monkey King's BBC chess engine which is based on the code from VICE by BlueFeverSoftware.
+ * It is responsible for async communication with the GUI during the main search loop. It is not responsible for command execution (except for the stop command).
+ * @param game 
+ */
+void readInput(Game *game);
+
+/**
+ * @brief The communicate function is responsible for mid-search communication with the GUI.
+ * @param game The game object.
+ */
+void communicate(Game *game);

@@ -1,4 +1,9 @@
 #include "uci.h"
+#include "Game.h"
+#include <io.h>
+#include <Windows.h>
+
+int quit = 0;
 
 int executeCommand(Game *game, char* command){
     // Technically speaking, each possible command is present only once in the command, so we can look for the first character
@@ -15,6 +20,7 @@ int executeCommand(Game *game, char* command){
     // - print : prints the current position
     // - eval : prints the static evaluation of the current position
     // - divide : prints the perft results for the current position, divided for each move
+    // - movelist : wrapper for "divide 1"
 
     // we will search for the first occurrence of a command
     char* isReady = strstr((char *)command, "isready");
@@ -28,6 +34,7 @@ int executeCommand(Game *game, char* command){
     char* print = strstr((char *)command, "print");
     char* eval = strstr((char *)command, "eval");
     char* divide = strstr((char *)command, "divide");
+    char* moveList = strstr((char *)command, "movelist");
 
     // The order of execution is the following:
     // - isready
@@ -41,6 +48,7 @@ int executeCommand(Game *game, char* command){
     // - print
     // - eval
     // - divide
+    // - movelist
 
     if (isReady){
         std::cout << "readyok" << std::endl;
@@ -90,6 +98,10 @@ int executeCommand(Game *game, char* command){
         std::cout << "Perft results for current position:" << std::endl;
         game->divide(atoi(divide + 7));
     }
+
+    if (moveList){
+        game->divide(1);
+    }
     return 0;
 }
 
@@ -97,6 +109,7 @@ int positionCommand(Game *game, char* command){
     // the position command is composed by the following subcommands:
     // - fen <fen_string> : sets the position to the specified fen string
     // - startpos : sets the position to the starting position
+    // - trickypos : sets the position to the tricky position (debugging purposes)
     // - moves <move_list> : sets the position to the specified move list
 
     // we will search for the first occurrence of a command
@@ -105,10 +118,15 @@ int positionCommand(Game *game, char* command){
 
     char* fen = strstr((char *)command, "fen");
     char* startposCMD = strstr((char *)command, "startpos");
+    char* trickyposCMD = strstr((char *)command, "trickypos");
     char* moves = strstr((char *)command, "moves");
 
     if(startposCMD){
         game->parseFEN(startpos);
+    }
+
+    if(trickyposCMD){
+        game->parseFEN(trickyPosition);
     }
 
     if(fen){
@@ -147,6 +165,10 @@ int goCommand(Game* game, char* command){
 
     if(movetime){
         game->moveTime = atoi(movetime + 9);
+    }
+    else {
+        // if no movetime is specified, we set the movetime to infinite
+        game->moveTime = -1; // (-1 underflows to max uint64_t)
     }
 
     if(infinite){
@@ -213,6 +235,10 @@ void uciLoop(Game* game){
         //print received input
         std::cout << "Received input: " << userInput << std::endl;
 
+        // if recived quit during search
+        if (quit){
+            return;
+        }
 
 
         // make sure the user input is not new line
@@ -239,4 +265,69 @@ void uciLoop(Game* game){
         // clear the user input buffer
         memset(userInput, 0, MAX_INPUT_LENGTH);
     }
+}
+
+int inputWaiting(){
+    static bool initialized = false;
+    static int pipe;
+    static HANDLE inputHandle;
+    DWORD dw;
+
+    if (!initialized) {
+        inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        pipe = !GetConsoleMode(inputHandle, &dw);
+        initialized = true;
+        if (!pipe){
+            SetConsoleMode(inputHandle, dw & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+            FlushConsoleInputBuffer(inputHandle);
+        }
+    }
+
+    if (pipe) {
+        if (!PeekNamedPipe(inputHandle, NULL, 0, NULL, &dw, NULL))
+            return dw;
+    }
+    else {
+        GetNumberOfConsoleInputEvents(inputHandle, &dw);
+        return dw <= 1 ? 0 : dw;
+    }
+
+
+}
+
+void readInput(Game *game){
+    int bytes;
+    char buffer[256] = "";
+    char *endc;
+
+    // listen to stdin
+    if (inputWaiting()){
+        game->stopped = true;
+
+        do {
+            bytes = _read(_fileno(stdin), buffer, 256);
+        } while (bytes < 0);
+        
+        endc = strchr(buffer, '\n');
+        if (endc) endc = nullptr;
+
+        if (strlen(buffer) > 0){
+            if (!strcmp(buffer, "quit")){
+                quit = 1;
+                return;
+            }
+            if (!strcmp(buffer, "stop")){
+                quit = 1;
+                return;
+            }
+        }
+    }
+}
+
+void communicate(Game *game){
+    // if time is up, stop the search
+    if (getTime64() > game->moveTime){
+        game->stopped = true;
+    }
+    readInput(game);
 }
