@@ -149,6 +149,7 @@ int goCommand(Game* game, char* command){
     // - btime <num> : sets the black time to the specified value
     // - winc <num> : sets the white increment to the specified value
     // - binc <num> : sets the black increment to the specified value
+    // - movetime <num> : sets the movetime to the specified value
 
     // we will search for the first occurrence of a command
     char* depth = strstr((char *)command, "depth");
@@ -164,11 +165,14 @@ int goCommand(Game* game, char* command){
     }
 
     if(movetime){
-        game->moveTime = atoi(movetime + 9);
+        game->moveTime = getTime64();
+        game->moveTime += atoi(movetime + 9);
+        game->depth = 64;
     }
     else {
         // if no movetime is specified, we set the movetime to infinite
-        game->moveTime = -1; // (-1 underflows to max uint64_t)
+        game->moveTime = 0xFFFFFFFFFFFFFFFF;
+        game->depth = 64;
     }
 
     if(infinite){
@@ -178,18 +182,22 @@ int goCommand(Game* game, char* command){
 
     if(wtime){
         game->wtime = atoi(wtime + 6);
+        game->moveTime = 0xFFFFFFFFFFFFFFFD; // To mark that we are not in infinite mode
     }
 
     if(btime){
         game->btime = atoi(btime + 6);
+        game->moveTime = 0xFFFFFFFFFFFFFFFD; // To mark that we are not in infinite mode
     }
 
     if(winc){
         game->winc = atoi(winc + 5);
+        game->moveTime = 0xFFFFFFFFFFFFFFFD; // To mark that we are not in infinite mode
     }
 
     if(binc){
         game->binc = atoi(binc + 5);
+        game->moveTime = 0xFFFFFFFFFFFFFFFD; // To mark that we are not in infinite mode
     }
 
     game->startSearch();
