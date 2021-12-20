@@ -55,6 +55,9 @@ extern BitBoard pawnAttacks[2][64];
 extern BitBoard knightAttacks[64];
 extern BitBoard kingAttacks[64];
 
+// LMR reduction table
+extern U8 reductionTable[128][128];
+
 // Magic bitboards stuff
 const U8 bishopRelevantBits[64] = {
     6, 5, 5, 5, 5, 5, 5, 6,
@@ -391,4 +394,10 @@ void initBishopAttacks();
  * @note This function should be called only at the beginning of the program (in the main function).
  */
 void initRookAttacks();
+
+/**
+ * @brief The initLMRTable function is used to populate the LMR table.
+ * @note This function should be called only at the beginning of the program (in the main function).
+ */
+void initLMRTable();
 

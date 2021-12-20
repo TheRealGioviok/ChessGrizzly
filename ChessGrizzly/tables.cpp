@@ -40,6 +40,9 @@ U64 bishopAttackTable[64][512];
 // The rook's attack table [square][occupancy]
 U64 rookAttackTable[64][4096];
 
+// The LMR reduction table
+U8 reductionTable[128][128] = { { 0 } };
+
 U32 randomNumber32()
 {
     // get state
@@ -476,6 +479,18 @@ inline BitBoard getQueenAttack(Square square, BitBoard occupancy) {
     return getBishopAttack(square, occupancy) | getRookAttack(square, occupancy);
 }
 
+
+void initLMRTable(){
+    for (int depth = 1; depth < 128; depth++) {
+        for (int move = 0; move < 128; move++) {
+            U8 result = std::log((std::log(depth) * std::log(move) / 1.95));
+            reductionTable[depth][move] = result;
+        }
+    }
+    // account for reductionTable[2][2], since the logarithm causes it to be 255
+    reductionTable[2][2] = 0;
+}
+
 void initAll(){
 
     U64 timeStart = getTime64();
@@ -484,6 +499,8 @@ void initAll(){
     initSliders(true);
     initSliders(false);
     initTables();
+    initLMRTable();
+
 
     std::cout << "Initialization completed in " << (getTime64() - timeStart) / 1000 << " ms" << std::endl;
     std::cout << "Type 'isReady' to continue" << std::endl << std::endl;
