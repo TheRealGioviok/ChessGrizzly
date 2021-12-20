@@ -11,6 +11,9 @@ extern Move counterMoves[2][64][64];
 extern Move killerMoves[2][maxPly];
 extern U16 ply;
 
+extern U8 pvLenght[maxPly];
+extern Move pvTable[maxPly][maxPly];
+
 class Game {
 public:
     /**
@@ -28,7 +31,7 @@ public:
     U32 btime = 0;
     U32 winc = 0;
     U32 binc = 0;
-    bool stopped = false;
+    volatile bool stopped = false;
 
     
 
@@ -76,7 +79,8 @@ public:
     bool makeMove(Move m);
 
     /**
-     * @brief The divide function will execute the perft function for each move in the current position at the given depth.
+     * @brief The 
+     function will execute the perft function for each move in the current position at the given depth.
      * @param depth The depth to divide the position at.
      * @return The number of nodes in the current position for the given depth.
      */
@@ -125,4 +129,9 @@ public:
      * @note This function is used for the UCI interface.
      */
     void reset();
+
+    /**
+     * @brief The makeNullMove function makes a null move on the internal position.
+     */
+    void makeNullMove();
 };

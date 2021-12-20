@@ -1,10 +1,15 @@
 #pragma once
 
 #include "Game.h"
+#include "uci.h"
 
 U32 mainHistory[maxPly][12][64] = {{{0}}};
 Move counterMoves[2][64][64] = {{{0}}};
 Move killerMoves[2][maxPly] = {{0}};
+
+U8 pvLenght[maxPly] = {0};
+Move pvTable[maxPly][maxPly] = {{0}};
+
 U16 ply = 0;
 
 bool Game::makeMove(Move move){
@@ -26,6 +31,7 @@ bool Game::makeMove(Move move){
         // Move the piece
         // If the move is a capture, remove the captured piece
         if (captures) pos.removeSpecificPiece(captured, to);
+        
         pos.fastPlacePiece(piece, to);
         pos.removeSpecificPiece(piece, from);
 
@@ -214,34 +220,73 @@ void Game::reset(){
     // Add stuff here when implementing heuristics
 }
 
-#define ASPIRATION_WINDOW_SIZE 30
+void Game::makeNullMove(){
+    pos.turn ^= 1;
+    pos.enPassantSquare = noSquare;
+    pos.lastMove = 0;
+
+}
+
+#define ASPIRATION_WINDOW_SIZE 50
 void Game::startSearch(){
     std::cout << "Starting search:\nDepth limit " << (int)depth << "\nWhite time " << ((int)wtime)/1000 << " + " << ((int)winc)/1000 << "\nBlack time " << ((int)btime)/1000 << " + " << ((int)binc)/1000 << std::endl;
     
     nodes = 0ULL;
+    stopped = false;
     // clear mainHistory, killerMoves, countermoves
     memset(mainHistory, 0, sizeof(mainHistory));
     memset(killerMoves, 0, sizeof(killerMoves));
     memset(counterMoves, 0, sizeof(counterMoves));
 
+    // clear pvLen and pvTable
+    memset(pvLenght, 0, sizeof(pvLenght));
+    memset(pvTable, 0, sizeof(pvTable));
+
+
     pos.lastMove = 0;
     
+    U64 startTime = getTime64();
+
     // Iterative deepening with aspiration windows
     Score score = negaMax(-infinity, +infinity, 1);
     std::cout << "info score depth 1 cp " << score << " nodes " << nodes << " moves ";
-    printMove(bestMove);
+    printMove(pvTable[0][0]);
     std::cout << std::endl;
 
     for (Depth d = 2; d <= depth; d++){
+        if (stopped) break;
         nodes = 0ULL;
-        score = negaMax(score - ASPIRATION_WINDOW_SIZE, score + ASPIRATION_WINDOW_SIZE, d);
-        if ((score < score - ASPIRATION_WINDOW_SIZE) || (score > score + ASPIRATION_WINDOW_SIZE)){
+        U64 timer = getTime64();
+        if (!stopped)
+            score = negaMax(score - ASPIRATION_WINDOW_SIZE, score + ASPIRATION_WINDOW_SIZE, d);
+        if (!stopped && (score < score - ASPIRATION_WINDOW_SIZE) || (score > score + ASPIRATION_WINDOW_SIZE)){
             std::cout << "Research at full size for depth " << d << std::endl;
-            score = negaMax(-infinity, infinity, d);
+            if (!stopped)
+                score = negaMax(-infinity, infinity, d);
         }
-        std::cout << "info score depth " << (int)d << " cp " << score << " nodes " << nodes << " moves ";
-        printMove(bestMove);
-        std::cout << std::endl;
+
+        if (!stopped){
+            bestMove = pvTable[0][0];
+            U64 timer2 = getTime64();
+            if (score < -mateScore && score > -mateValue){
+                std::cout << "info score mate " << -(score + mateValue) / 2 - 1 << " depth " << (int)d << " nodes " << nodes << " pv ";
+            }
+            else if (score > mateScore && score < mateValue){
+                std::cout << "info score mate " << (score - mateValue) / 2 + 1 << " depth " << (int)d << " nodes " << nodes << " pv ";
+            }
+            else{
+                std::cout << "info score cp " << score << " depth " << (int)d << " nodes " << nodes << " pv ";
+            }
+
+            for (int i = 0; i<pvLenght[0]; i++){
+                printMove(pvTable[0][i]);
+                std::cout << " ";
+            }
+
+            std::cout << " speed " << (nodes / (timer2 - timer + 1)) << "kN/S" << std::endl;
+        }
+
+        
     }
 
     std::cout << "bestmove ";
@@ -249,7 +294,10 @@ void Game::startSearch(){
     std::cout << std::endl;
 }
 
-Score Game::negaMax(Score alpha, Score beta, Depth depth){
+inline Score Game::negaMax(Score alpha, Score beta, Depth depth){
+
+    // init pvLenght
+    pvLenght[ply] = ply;
 
     // If we have reached the depth limit, return the heuristic value
     if (depth == 0){
@@ -260,6 +308,12 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
         return pestoEval(&pos);
     }
 
+    // communicate every 2048 nodes
+    if ((nodes & 2047) == 0){
+        communicate(this);
+        // if stopped, return 0 (value won't be used)
+        if (stopped) return 0;
+    }
     // Increment the number of nodes
     nodes++;
 
@@ -268,11 +322,25 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
     bitScanForward(&kingSquare, pos.bitboards[K + pos.turn * 6]);
     bool inCheck = pos.isSquareAttacked(kingSquare, pos.turn ^ 1);
 
+    Position save = pos;
+    bool pvNode = (beta - alpha) > 1;
+
+    // Null move pruning
+    if (ply && !pvNode && depth > 3 && !inCheck && pos.lastMove != 0 && !pos.mayBeZugzwang()) {
+        ++ply;
+        makeNullMove();
+        Score score = -negaMax(-beta, -alpha, depth - 3);
+        --ply;
+        pos = save;
+        if (score >= beta){
+            return beta;
+        }
+    }
+
     // Generate all the moves
     MoveList *moveList = new MoveList();
     generateMoves(moveList);
 
-    Position save = pos;
     int legalMoves = 0;
 
     for (int count = 0; count < moveList->count; count++){
@@ -289,15 +357,38 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
         }
 
         legalMoves++;
-        Score score = -negaMax(-beta, -alpha, depth - 1);
+        Score score;
+        // PVS search: we search the first move at full window, then the others at null window. If the search fails, then we research at full window
+        if (!legalMoves || !ply){
+            score = -negaMax(-beta, -alpha, depth - 1);
+        }
+        else{
+            score = -negaMax(-alpha - 1, -alpha, depth - 1 - (bool)okToReduce(moveList->moves[count]) * reductionTable[depth][legalMoves]);
+            if (score > alpha && score < beta){
+                score = -negaMax(-beta, -alpha, depth - 1);
+            }
+        }
         --ply;
         pos = save;
 
         if (score > alpha){
             alpha = score;
-            // history update
-            if (pieceCaptured(move) == EMPTY)
-                mainHistory[ply][pieceMoved(move)][targetSquare(move)] += depth;
+
+            if (pvNode){
+                // write PV move to pvTable
+                pvTable[ply][ply] = move;
+
+                // copy moves from deeper ply to current ply's line
+
+                for (int i = ply + 1; i < pvLenght[ply + 1]; i++){
+                    pvTable[ply][i] = pvTable[ply + 1][i];
+                }
+
+                // adjust pvLen 
+                pvLenght[ply] = pvLenght[ply + 1];
+            }
+
+            
             if (score >= beta) {
                 if (pieceCaptured(move) == EMPTY) {
                     // Update killer moves
@@ -305,19 +396,19 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
                     killerMoves[1][depth] = move;
 
                     // Update countermoves
-                    counterMoves[pos.turn][sourceSquare(move)][targetSquare(move)] = move;
+                    counterMoves[pos.turn][sourceSquare(pos.lastMove)][targetSquare(pos.lastMove)] = move;
                 }
                 delete moveList;
                 return beta;
             }
-            if (!ply)
-            {
-                // Update the best move
-                bestMove = move;
-            }
+
+            // history update
+            if (pieceCaptured(move) == EMPTY)
+                mainHistory[ply][pieceMoved(move)][targetSquare(move)] += depth * depth;
         }
     }
     
+    pos = save;
     delete moveList;
     
     if (!legalMoves){
@@ -334,6 +425,18 @@ Score Game::negaMax(Score alpha, Score beta, Depth depth){
 
 Score Game::quiescence(Score alpha, Score beta){
 
+    // communicate every 2048 nodes
+    if ((nodes & 2047) == 0){
+        communicate(this);
+        // if stopped, return 0 (value won't be used)
+        if (stopped) return 0;
+    }
+
+    // Are we in check?
+    unsigned long kingSquare;
+    bitScanForward(&kingSquare, pos.bitboards[K + pos.turn * 6]);
+    bool inCheck = pos.isSquareAttacked(kingSquare, pos.turn ^ 1);
+
     Score eval = pestoEval(&pos);
     if (eval >= beta)
         return beta;
@@ -342,21 +445,21 @@ Score Game::quiescence(Score alpha, Score beta){
     if (ply >= maxPly)
         return eval;
 
+#define BIGDELTA 775
+
+    if (!inCheck && (eval < alpha - BIGDELTA * (1 + ( promotionOf(pos.lastMove) != EMPTY))))
+        return alpha;
+
     // Generate all the moves
-    MoveList *moveList = new MoveList();
-    generateMoves(moveList);
+    MoveList* moveList = new MoveList();
+    inCheck ? generateMoves(moveList) : pos.generateCaptures(moveList);
 
     // Loop through all the moves
     Position save = pos;
 
-    // Are we in check?
-    unsigned long kingSquare;
-    bitScanForward(&kingSquare, pos.bitboards[K + pos.turn * 6]);
-    bool inCheck = pos.isSquareAttacked(kingSquare, pos.turn ^ 1);
-
     for (int i = 1; i < moveList->count; i++){
         Move move = onlyMove(moveList->moves[i]);
-        if (((pieceCaptured(move) != EMPTY)) && makeMove(move)){
+        if (makeMove(move)){
             ++ply;
             Score score = -quiescence(-beta, -alpha);
             --ply;
@@ -368,6 +471,9 @@ Score Game::quiescence(Score alpha, Score beta){
             if (score > alpha){
                 alpha = score;
             }
+        }
+        else {
+            pos = save;
         }
     }
 
