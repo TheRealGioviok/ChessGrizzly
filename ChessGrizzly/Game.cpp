@@ -229,7 +229,7 @@ void Game::makeNullMove(){
 
 #define ASPIRATION_WINDOW_SIZE 50
 void Game::startSearch(){
-    std::cout << "Starting search:\nDepth limit " << (int)depth << "\nWhite time " << ((int)wtime)/1000 << " + " << ((int)winc)/1000 << "\nBlack time " << ((int)btime)/1000 << " + " << ((int)binc)/1000 << std::endl;
+    // std::cout << "Starting search:\nDepth limit " << (int)depth << "\nWhite time " << ((int)wtime)/1000 << " + " << ((int)winc)/1000 << "\nBlack time " << ((int)btime)/1000 << " + " << ((int)binc)/1000 << std::endl;
     
     nodes = 0ULL;
     stopped = false;
@@ -242,16 +242,36 @@ void Game::startSearch(){
     memset(pvLenght, 0, sizeof(pvLenght));
     memset(pvTable, 0, sizeof(pvTable));
 
+    std::cin.clear();
+    std::cout << std::endl;
 
     pos.lastMove = 0;
     
     U64 startTime = getTime64();
+
+    if (moveTime == 0xFFFFFFFFFFFFFFFD) {
+        // if moveTime is set to -2, we are playing with time control
+        // we need to calculate the time for the next move
+
+        moveTime = getTime64();
+        if (pos.turn == WHITE) {
+            moveTime += (U64)(wtime / 25) + winc;
+        }
+        else {
+            moveTime += (U64)(btime / 25) + binc;
+        }
+        depth = 64;
+    }
+
+    stopped = false;
 
     // Iterative deepening with aspiration windows
     Score score = negaMax(-infinity, +infinity, 1);
     std::cout << "info score depth 1 cp " << score << " nodes " << nodes << " moves ";
     printMove(pvTable[0][0]);
     std::cout << std::endl;
+
+    stopped = false;
 
     for (Depth d = 2; d <= depth; d++){
         if (stopped) break;

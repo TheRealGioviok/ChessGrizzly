@@ -26,7 +26,7 @@ public:
     U64 nodes = 0;
     Position pos;
     Depth depth = 0;
-    U32 moveTime = 0;
+    U64 moveTime = 0;
     U32 wtime = 0;
     U32 btime = 0;
     U32 winc = 0;
