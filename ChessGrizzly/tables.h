@@ -267,6 +267,18 @@ extern U64 rookAttackTable[64][4096];
 // Random state variable, to be used in the random generator
 extern U32 state;
 
+// The random piece keys
+extern HashKey pieceKeys[12][64];
+
+// The enpassant keys
+extern HashKey enPassantKeys[65]; // The extra one is for when there is no enpassant, and it is set to 0 (doesn't change the hash)
+
+// The castling keys
+extern HashKey castlingKeys[16];
+
+// The side to move key
+extern HashKey sideKey;
+
 /**
  * @brief The random32 function returns a random number between 0 and 2^32 - 1 using the XOR shift algorithm.
  * @return A random number between 0 and 2^32 - 1.
@@ -427,3 +439,8 @@ void initLMRTable();
  */
 void initUtilityMasks();
 
+/**
+ * @brief The initHashKeys function populates the keys table for each piece/square, enPassant square, castling rights and side to move.
+ * @note This function should be called only at the beginning of the program.
+ */
+void initHashKeys();

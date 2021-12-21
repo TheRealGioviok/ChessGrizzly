@@ -52,6 +52,18 @@ U64 rookAttackTable[64][4096];
 // The LMR reduction table
 U8 reductionTable[128][128] = { { 0 } };
 
+// The random piece keys
+HashKey pieceKeys[12][64] = { { 0 } };
+
+// The enpassant keys
+HashKey enPassantKeys[65] = { 0 };
+
+// The castling keys
+HashKey castlingKeys[16] = { 0 };
+
+// The side to move key
+HashKey sideKey = 0;
+
 U32 randomNumber32()
 {
     // get state
@@ -531,6 +543,29 @@ void initUtilityMasks(){
     }
 }
 
+void initHashKeys(){
+    // piece/square keys
+    forEachPiece(piece) {
+        forEachSquare(square) {
+            pieceKeys[piece][square] = randomNumber64();
+        }
+    }
+
+    // en passant keys
+    forEachSquare(square){
+        enPassantKeys[square] = randomNumber64();
+    }
+
+    // castling keys
+    for(int i = 0; i < 16; i++){
+        castlingKeys[i] = randomNumber64();
+    }
+
+    // side to move key
+    sideKey = randomNumber64();
+}
+
+
 void initAll(){
 
     U64 timeStart = getTime64();
@@ -541,6 +576,7 @@ void initAll(){
     initTables();
     initLMRTable();
     initUtilityMasks();
+    initHashKeys();
 
 
     std::cout << "Initialization completed in " << (getTime64() - timeStart) / 1000 << " ms" << std::endl;
@@ -548,3 +584,4 @@ void initAll(){
     // initBishopAttacks();
     // initRookAttacks();
 }
+
