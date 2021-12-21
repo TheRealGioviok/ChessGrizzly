@@ -30,17 +30,28 @@ bool Game::makeMove(Move move){
 
         // Move the piece
         // If the move is a capture, remove the captured piece
-        if (captures) pos.removeSpecificPiece(captured, to);
-        
+        if (captures) {
+            pos.removeSpecificPiece(captured, to);
+            // Update the hash key by removing the capture
+            pos.hashKey ^= pieceKeys[captured][to];
+        }
         pos.fastPlacePiece(piece, to);
         pos.removeSpecificPiece(piece, from);
+        // Update the hash key by removing the piece from the from square
+        pos.hashKey ^= pieceKeys[piece][from];
+        // Update the hash key by placing the piece on the to square
+        pos.hashKey ^= pieceKeys[piece][to];
 
-        
+
 
         // If the move is a promotion, replace the piece with the promotion
         if (promotes) {
             pos.removeSpecificPiece(piece, to);
             pos.fastPlacePiece(promotion, to);
+            // Update the hash key by removing the piece from the to square
+            pos.hashKey ^= pieceKeys[piece][to];
+            // Update the hash key by placing the promoted piece on the to square
+            pos.hashKey ^= pieceKeys[promotion][to];
         }
 
         // If the move is a castling move, move the rook
@@ -50,18 +61,34 @@ bool Game::makeMove(Move move){
                 case c1:
                     pos.fastPlacePiece(R, d1);
                     pos.removeSpecificPiece(R, a1);
+                    // Update the hash key by removing the rook from the a1 square
+                    pos.hashKey ^= pieceKeys[R][a1];
+                    // Update the hash key by placing the rook on the d1 square
+                    pos.hashKey ^= pieceKeys[R][d1];
                     break;
                 case g1:
                     pos.fastPlacePiece(R, f1);
                     pos.removeSpecificPiece(R, h1);
+                    // Update the hash key by removing the rook from the h1 square
+                    pos.hashKey ^= pieceKeys[R][h1];
+                    // Update the hash key by placing the rook on the f1 square
+                    pos.hashKey ^= pieceKeys[R][f1];
                     break;
                 case c8:
                     pos.fastPlacePiece(r, d8);
                     pos.removeSpecificPiece(r, a8);
+                    // Update the hash key by removing the rook from the a8 square
+                    pos.hashKey ^= pieceKeys[r][a8];
+                    // Update the hash key by placing the rook on the d8 square
+                    pos.hashKey ^= pieceKeys[r][d8];
                     break;
                 case g8:
                     pos.fastPlacePiece(r, f8);
                     pos.removeSpecificPiece(r, h8);
+                    // Update the hash key by removing the rook from the h8 square
+                    pos.hashKey ^= pieceKeys[r][h8];
+                    // Update the hash key by placing the rook on the f8 square
+                    pos.hashKey ^= pieceKeys[r][f8];
                     break;
                 default:{
                     std::cout << "Fatal error in move execution: can't castle to "<< squareNames[to] << std::endl;
@@ -70,14 +97,27 @@ bool Game::makeMove(Move move){
             }
         }
 
+        // Update the hash key by removing castling rights
+        pos.hashKey ^= castlingKeys[pos.castlingRights];
+
         // Update castling rights
         pos.castlingRights &= castlingRightsMask[from];
         pos.castlingRights &= castlingRightsMask[to];
 
+        // Update the hash key by adding back castling rights
+        pos.hashKey ^= castlingKeys[pos.castlingRights];
+
         // If the move is an en passant capture, remove the captured pawn
         if (enpassant) {
             pos.removeSpecificPiece(captured, pos.enPassantSquare + 8 * (1 - 2 * pos.turn));
+            // Update the hash key by removing the captured pawn
+            pos.hashKey ^= pieceKeys[captured][pos.enPassantSquare + 8 * (1 - 2 * pos.turn)];
+            // Update the hash key by re-adding the ghost pawn (that we removed when handling normal captures)
+            pos.hashKey ^= pieceKeys[captured][to];
         }
+
+        // Update the hash key by removing the en passant square
+        pos.hashKey ^= enPassantKeys[pos.enPassantSquare];
 
         // If the move is a double pawn push, set the en passant square
         if (doublePush) {
@@ -88,6 +128,9 @@ bool Game::makeMove(Move move){
             pos.enPassantSquare = noSquare;
         }
 
+        // Update the hash key by adding the en passant square
+        pos.hashKey ^= enPassantKeys[pos.enPassantSquare];
+
         // Now we check if the move is legal
         unsigned long ourKing;
         bitScanForward(&ourKing, pos.bitboards[K + pos.turn * 6]);
@@ -95,11 +138,14 @@ bool Game::makeMove(Move move){
         // switch turn
         pos.turn ^= 1;
 
+        // Update the hash key by adding the turn
+        pos.hashKey ^= sideKey;
+
         // If we are in check after the move, the move is illegal
         if (pos.isSquareAttacked(ourKing, pos.turn)){
             return false;
         }
-        pos.lastMove = onlyMove(move);
+
         return true;
     }
     return false;
@@ -137,6 +183,16 @@ U64 Game::_perft(int depth)
     {
         if (makeMove(moveList->moves[i]))
         {
+            // For debugging purposes, we check the incrementally updated hash key against a newly generated one
+            HashKey HashKey = pos.hashKey;
+            pos.generateHashKey();
+            if (HashKey != pos.hashKey)
+            {
+                std::cout << "Hash key error" << std::endl;
+                std::cout << "Move: " << moveList->moves[i] << std::endl;
+                print();
+                exit(-1);
+            }
             total += _perft(depth - 1);
         }
         pos = save;
