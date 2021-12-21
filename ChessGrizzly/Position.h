@@ -32,6 +32,9 @@ public:
     // The lastMove variable stores the last move that was made.
     Move lastMove = 0;
 
+    // The hashKey variable stores the hash key of the position.
+    HashKey hashKey = 0ULL;
+
     /**
      * @brief The printBoard function prints the board to the console.
      */
@@ -186,5 +189,12 @@ public:
      * @param list The list to add the move to
      */
     void addMoveToList(ScoredMove move, MoveList *moveList);
+
+    /**
+     * @brief The generateHashKey function generates a hash key for the current position, and stores it in the hash key variable.
+     * @note This is used when a position is loaded, since the hash key is incrementally updated during the search.
+     * It is also usable as a debug check for the hash key change in the makeMove function.
+     */
+    void generateHashKey();
 
 };

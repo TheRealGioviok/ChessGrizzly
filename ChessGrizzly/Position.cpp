@@ -113,7 +113,7 @@ void Position::printBoard(){
     std::cout << (castlingRights & WQCastle ? "Q" : "-");
     std::cout << (castlingRights & BKCastle ? "k" : "-");
     std::cout << (castlingRights & BQCastle ? "q" : "-");
-    std::cout << std::endl;
+    std::cout << "\nHash key: " << hashKey << std::endl;
 }
 
 // Same as printBoard, but returns a string instead of printing it.
@@ -278,6 +278,9 @@ bool Position::parseFEN(const char *fen) {
         // Since the position is already set, we won't return false, but we will print a warning.
         std::cout << "Warning: FEN string contains more data than expected : \""<< fen <<"\". Ignoring it.\n";
     }
+
+    // If everything is alright, generate the hash key for the current position
+    generateHashKey();
 
     return true;
 }
@@ -1375,4 +1378,25 @@ inline void Position::addMoveToList(ScoredMove move, MoveList *list) {
     score += (U64)mainHistory[ply][pieceMoved(move)][targetSquare(move)];
     score += (U64)centerBonusTable10[targetSquare(move)];
     list->moves[list->count++] = (score << 32) | move;
+}
+
+void Position::generateHashKey(){
+
+    hashKey = 0ULL;
+
+    forEachPiece(piece){
+        BitBoard bb = bitboards[piece];
+        while (bb){
+            unsigned long square;
+            bitScanForward(&square, bb);
+            hashKey ^= pieceKeys[piece][square];
+            clearBit(bb, square);
+        }
+    }
+
+    hashKey ^= enPassantKeys[enPassantSquare];
+
+    hashKey ^= castlingKeys[castlingRights];
+
+    if (turn == BLACK) hashKey ^= sideKey;
 }
